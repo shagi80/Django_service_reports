@@ -1,0 +1,3 @@
+{% for item,value in base_price_type %}
+<li><a class="dropdown-item" href="{% url 'prices_list_page' item %}">Расценки по прайсу "{{ value }}"</a></li>
+{% endfor %}

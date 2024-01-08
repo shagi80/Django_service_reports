@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+
+{% block title %}
+    {{ block.super }}|Сайт недоступен
+{% endblock %}
+
+{% block content %}
+<nav class="navbar sticky-top navbar-expand-md navbar-light bg-light" aria-label="Fourth navbar example">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#"><strong>RENOVA</strong></a>
+    </div>
+</nav>
+
+<div class="container py-5 text-center">
+    <h1>ИЗВИНИТЕ</h1>
+    <H2>САЙТ ВРЕМЕННО НЕДОСТУПЕН !</H2>
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

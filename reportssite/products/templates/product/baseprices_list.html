@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+{% include 'inc/staff_navbar.html' %}
+{% endif %}
+
+<div class="container">
+    <main>
+        <div class="row py-4 justify-content-between">
+            <div class="col-11"><h3>{{ title }}</h3></div>
+            <div class="col-1">
+                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser  %}
+                <a class="btn btn-primary" href="{% url 'price_add_page' price_type %}?next={{ request.path }}" role="button">Добавить</a>
+                {% endif %}
+            </div>
+        </div>
+        {% if prices %}
+        <div class="row g-5">
+            <!-- список продуктов --!>
+            {% show_products_list products %}
+            <!-- вывод цен --!>
+            <div class="col-lg-9">
+                <!-- общие расценки --!>
+                <div class="container mb-3" id="Item-0">
+                    <diw class="row bg-light justify-content-between">
+                        <div class="col-auto">
+                            <h5>Общие коды</h5>
+                        </div>
+                        <div class="col-auto">
+                            <a data-bs-toggle="collapse" href="#collapse-0" aria-expanded="false" aria-controls="collapseExample">
+                                <i class="bi bi-arrow-down-up"></i>
+                            </a>
+                        </div>
+                    </diw>
+                    <div class="row collapse show" id="collapse-0">
+                        <hr>
+                        {% for price in general_prices %}
+                        <div class="row col-10 px-5 bg-white">
+                            <div class="col-sm-6">
+                                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser  %}
+                                <a href="{{ price.get_absolute_url }}?next={{ request.path }}" style="text-decoration: none">{{ price.get_repair_type_display }}</a>
+                                {% else %}
+                                {{ price.get_repair_type_display }}
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-1">
+                                {{ price.price }}
+                            </div>
+                            <div class="col-sm-1">
+                                руб
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- расценки по типам продукции --!>
+                {% for product in products %}
+                <div class="container mb-3" id="Item-{{ forloop.counter }}">
+                    <diw class="row bg-light justify-content-between">
+                        <div class="col-auto">
+                            <h5>{{ product.title }}</h5>
+                        </div>
+                        <div class="col-auto">
+                            <a data-bs-toggle="collapse" href="#collapse-{{ forloop.counter }}" aria-expanded="False" aria-controls="collapseExample".>
+                                <i class="bi bi-arrow-down-up"></i>
+                            </a>
+                        </div>
+                    </diw>
+
+                    <div class="row collapse show" id="collapse-{{ forloop.counter }}">
+                        <hr>
+                        {% for price in prices %}
+                        <div class="row col-10 px-5 bg-white">
+                            {% if price.product == product %}
+                            <div class="col-sm-6">
+                                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                                <a href="{{ price.get_absolute_url }}?next={{ request.path }}" style="text-decoration: none">{{ price.get_repair_type_display }}</a>
+                                {% else %}
+                                {{ price.get_repair_type_display }}
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-1">
+                                {{ price.price }}
+                            </div>
+                            <div class="col-sm-1">
+                                руб
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- кнопка ВВЕРХ --!>
+        {% include 'inc/go_to_top_button.html' %}
+        {% else %}
+        <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+        {% endif %}
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

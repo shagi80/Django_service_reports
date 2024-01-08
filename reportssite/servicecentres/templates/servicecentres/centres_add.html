@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% include 'inc/staff_navbar.html' %}
+
+
+<div class="container сol-sm-12">
+    {{ form.get_object.title }}
+    <div class="row justify-content-between py-3 mt-2">
+        <div class="col-auto">
+            <h2><p class="text">{{ title }}</p></h2>
+        </div>
+        <div class="col-auto">
+            {% if object %}
+            <a class="btn btn-outline-secondary" href="{% url 'centres_contact_page' object.pk %}" role="button">Контакты</a>
+            <a class="btn btn-outline-secondary" href="{%url 'code_and_prices_page' object.pk %}" role="button">Расценки</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <form class="row g-3" method="post">
+        {% csrf_token %}
+        <div class="col-md-2">
+            <label class="form-label">Код</label>
+            {{ form.code }}
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Наименование</label>
+            {{ form.title }}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Город</label>
+            {{ form.city }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Регион</label>
+            {{ form.region }}
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Юридический адрес</label>
+            {{ form.addr }}
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Фактический адрес</label>
+            {{ form.post_addr }}
+        </div>
+        <div class="col-md-9">
+            <label class="form-label">Особые условия работы</label>
+            {{ form.conditions }}
+        </div>
+        <div class="col-md-3">
+            <div class="row">
+                <div class="col-12">
+                    <label class="form-label">Тип прайса</label>
+                    {{ form.price_type }}
+                </div>
+                <div class="col-12 mt-3 ">
+                    <div class="row">
+                        <div class="col-10">
+                            <label class="form-label">Бесплатные запчасти</label>
+                        </div>
+                        <div class="col-2">
+                           {{ form.free_parts }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">Примечание</label>
+            {{ form.note }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Пользователь</label>
+            {{ form.user }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Менеджер</label>
+            {{ form.staff_user }}
+        </div>
+        <div class="col-12">
+            <div class="form-check">
+                {{ form.is_active }}
+                <label class="form-check-label align-items-center">активен</label>
+            </div>
+        </div>
+        <div class="col-lg-12 text-end">
+            <button type="submit" class="btn btn-outline-secondary" name="close">Записать и закрыть</button>
+            <button type="submit" class="btn btn-primary" name="update">Записать и продолжить</button>
+        </div>
+    </form>
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

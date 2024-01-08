@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|Главная
+{% endblock %}
+
+{% block content %}
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container pt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8 mb-2">
+            <div class="row justify-content-center g-3">
+                <!--Отчеты -->
+                <div class="col-12 col-md-6">
+                    <div class="p-3 border border-dark rounded shadow">
+                        <div class="row pb-3 justify-content-between">
+                            <div class="col"><h4>Отчеты</h4> </div>
+                            <div class="col-auto">
+                                <a class="btn btn-outline-secondary" href="{% url 'reports_list' %}" role="button" aria-disabled="true"><i class="bi bi-card-list"></i></a>
+                            </div>
+                        </div>
+                        <table class="table table-hover">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "reports_list" %}?status=send' class="text-decoration-none text-warning">
+                                            <strong>{{ reports.send.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ reports.send.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "reports_list" %}?status=send_again' class="text-decoration-none text-warning">
+                                            <strong>{{ reports.send_again.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ reports.send_again.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "reports_list" %}?status=refinement' class="text-decoration-none text-danger">
+                                            <strong>{{ reports.refinement.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ reports.refinement.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "reports_list" %}?status=received' class="text-decoration-none text-warning">
+                                            <strong>{{ reports.received.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ reports.received.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "reports_list" %}?status=verified' class="text-decoration-none text-info">
+                                            <strong>{{ reports.verified.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ reports.verified.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "reports_list" %}?status=accepted' class="text-decoration-none text-info">
+                                            <strong>{{ reports.accepted.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ reports.accepted.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "reports_list" %}?status=payment' class="text-decoration-none text-success">
+                                            <strong>{{ reports.payment.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ reports.payment.count }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!--Акт-->
+                </div>
+                <!--Акты-->
+                <div class="col-12 col-md-6">
+                    <div class="p-3 border border-dark rounded shadow">
+                        <div class="row pb-3 justify-content-between">
+                            <div class="col"><h4>Акты НРП</h4> </div>
+                            <div class="col-auto">
+                                <a class="btn btn-outline-secondary" href="{% url 'act-list' %}" role="button" aria-disabled="true"><i class="bi bi-card-list"></i></a>
+                            </div>
+                        </div>
+                        <table class="table table-hover">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "act-list" %}?status=send' class="text-decoration-none text-warning">
+                                            <strong>{{ acts.send.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ acts.send.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "act-list" %}?status=send_again' class="text-decoration-none text-warning">
+                                            <strong>{{ acts.send_again.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ acts.send_again.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "act-list" %}?status=refinement' class="text-decoration-none text-danger">
+                                            <strong>{{ acts.refinement.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ acts.refinement.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "act-list" %}?status=received' class="text-decoration-none text-warning">
+                                            <strong>{{ acts.received.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ acts.received.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "act-list" %}?status=accepted' class="text-decoration-none text-info">
+                                            <strong>{{ acts.accepted.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ acts.accepted.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "act-list" %}?status=confirmed' class="text-decoration-none text-success">
+                                            <strong>{{ acts.confirmed.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ acts.confirmed.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href='{% url "act-list" %}?status=compensated' class="text-decoration-none text-success">
+                                            <strong>{{ acts.compensated.title }}</strong>
+                                        </a>    
+                                    </th>
+                                    <td>{{ acts.compensated.count }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!--Измениния данных-->
+                <div class="col-11 col-md-8 mt-3 border  border-dark rounded shadow p-3">
+                    <div class="row pb-3 justify-content-between">
+                        <div class="col"><h4>Последние изменения данных</h4> </div>
+                        <div class="col-auto">
+                            <a class="btn btn-outline-secondary" href="{% url 'logs_page' %}" role="button" aria-disabled="true"><i class="bi bi-card-list"></i></a>
+                        </div>
+                    </div>
+                    {% for action in staff_actions %}
+                        {% show_log action.pk %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+        </div>
+        <!--Закзанный детали-->
+        <div class="col-md-6 col-lg-4 mb-2">
+            {% if expired_parts %}
+                <div class="p-3 border border-dark rounded shadow mb-2">
+                    <div class="row pb-3 justify-content-between">
+                        <div class="col text-danger"><h4>Просроченные детали</h4> </div>
+                        <div class="col-auto">
+                            <a class="btn btn-outline-secondary" href="{% url 'staff-ordered-parts' %}" role="button" aria-disabled="true"><i class="bi bi-card-list"></i></a>
+                        </div>
+                    </div>
+                    <table class="table table-hover">
+                        <tbody>
+                            {% for period,count in expired_parts.items %}
+                                {{expired_data}}
+                                <tr>
+                                    <td>
+                                        <a href='{% url "staff-ordered-parts" %}?period={{ period }}' class="text-decoration-none text-danger">
+                                            просрочено более {{ period }} дней
+                                        </a>    
+                                    </th>
+                                    <td class="text-danger">{{ count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+            <div class="p-3 border border-dark rounded shadow">
+                <div class="row pb-3 justify-content-between">
+                    <div class="col"><h4>Заказанные детали</h4> </div>
+                    <div class="col-auto">
+                        <a class="btn btn-outline-secondary" href="{% url 'staff-ordered-parts' %}" role="button" aria-disabled="true"><i class="bi bi-card-list"></i></a>
+                    </div>
+                </div>
+                {% if part_orders %}
+                    <table class="table table-hover">
+                        <tbody>
+                            {% for order in part_orders.values %}
+                                <tr>
+                                    <td>
+                                        <a href='{% url "staff-ordered-parts" %}?center={{ order.pk }}' class="text-decoration-none text-dark">
+                                            {{ order.title }}
+                                        </a>    
+                                    </th>
+                                    <td>{{ order.count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-center text-muted">Заказов нет ...</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

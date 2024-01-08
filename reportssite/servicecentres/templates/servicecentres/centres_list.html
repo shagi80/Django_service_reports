@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container">
+    <main>
+        <div class="row py-4 justify-content-between">
+            <div class="col-auto"><h3>{{ title }}</h3></div>
+            <div class="col-auto">
+                {% if request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                <a class="btn btn-primary" href="{% url 'centres_add_page' %}" role="button">Добавить</a>
+                {% endif %}
+                <button id="exportBtn" class="btn btn-outline-secondary" style="button" data-url="{% url 'export-list' %}">Выгрузить в XLS</button>
+            </div>
+        </div>
+
+        <div class="row g-5">
+            <div class="col-lg-4  order-lg-last">
+                <h4 class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-primary">Найдено организаций</span>
+                    <span class="badge bg-primary rounded-pill">{{ obj_count }}</span>
+                </h4>
+                <form class="card p-2" method="get">
+                    <div class="row mb-3">
+                        <label class="col-xl-4 col-form-label">Поиск</label>
+                        <div class="col-xl-8">
+                            {{ form.filter }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-xl-4 col-form-label">Регион</label>
+                        <div class="col-xl-8">
+                            {{ form.region }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-xl-4">Менеджер</label>
+                        <div class="col-xl-8">
+                            {{ form.staff_user }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-xl-6 form-check-label">Только активные</label>
+                        <div class="col-xl-6">
+                            {{ form.active_only }}
+                        </div>
+                    </div>
+                    <div class="container d-flex justify-content-center gap-2">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i>
+                            выбрать
+                        </button>
+                        <a class="btn btn-outline-primary" href="{% url 'centres_list_page' %}" role="button">
+                            <i class="bi bi-x-lg"></i>
+                            сбросить
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-8 d-grid gap-3">
+                {% if centres %}
+                {% for item in centres %}
+                <div class="card" id="Item-{{ item.pk }}">
+                    <h5 class="card-header">
+                        <div class="row justify-content-between">
+                            <div class="col-auto">
+                                {{ item.title }}
+                            </div>
+                            <div class="col-auto">
+                                {% if item.staff_user %}
+                                <small class="text-muted">{{ item.staff_user }}</small>
+                                {% else %}
+                                <small class="text-danger">менеджер не указан</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </h5>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.city }} ({{ item.region }})</h5>
+                        <div class="row pb-2"><strong class="text-muted">{{ item.note }}</strong></div>
+                        {% if item.addr %}
+                        <div class="row"><label class="card-text">Юридический адрес: {{ item.addr }}</label></div>
+                        {% endif %}
+                        {% if item.post_addr %}
+                        <div class="row"><label class="card-text">Почтовый адрес: {{ item.post_addr }}</label></div>
+                        {% endif %}
+                        {% if request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                        <div class="row justify-content-start py-1">
+                            <div class="col-auto"><i class="bi bi-coin"></i></div>
+                            <div class="col"><p class="card-text">тип прайса:  {{ item.get_price_type_display}}</p></div>
+                        </div>
+                        {% endif %}
+                        {% if item.conditions %}
+                        <div class="row justify-content-start py-1">
+                            <div class="col-auto"><i class="bi bi-info-square"></i></div>
+                            <div class="col"><p class="card-text">{{ item.conditions }}</p></div>
+                        </div>
+                        {% endif %}
+                        {% if item.free_parts %}
+                        <div class="row justify-content-start py-1">
+                            <div class="col-auto"><i class="bi bi-info-square"></i></div>
+                            <div class="col"><p class="card-text">бесплатная поставка запчастей</p></div>
+                        </div>
+                        {% endif %}
+                        <div class="row justify-content-between py-2">
+                            <div class="col-auto">
+                                {% if not item.is_active %}
+                                <strong class="text-danger">Не активен</strong>
+                                {% endif %}
+                            </div>
+                            <div class="col-auto">
+                                <a href="{% url 'centres_contact_page' item.pk %}" class="btn btn-outline-secondary">Контакты</a>
+                                {% if item.staff_user == request.user or request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                                <a href="{%url 'code_and_prices_page' item.pk %}" class="btn btn-outline-secondary">Расценки</a>
+                                <a href="{%url 'reports_list' %}?service_center={{ item.pk }}" class="btn btn-outline-secondary">Отчеты</a>
+                                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                                    <a href="{{ item.get_absolute_url }}?next={{ request.get_full_path }}" class="btn btn-outline-success"><i class="bi bi-pencil"></i></a>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if centres %}
+        <!-- кнопка ВВЕРХ -->
+        {% include 'inc/go_to_top_button.html' %}
+        {% endif %}
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    $("#exportBtn").click(function(){
+        search = window.location.search;
+        url = $(this).attr("data-url");
+        window.location.href = url+search;
+    })
+</script>
+
+
+{% endblock %}

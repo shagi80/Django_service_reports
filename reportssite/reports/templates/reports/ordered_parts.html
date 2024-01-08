@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|Заказы ЗЧ
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+{% include 'inc/staff_navbar.html' %}
+{% else %}
+{% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container">
+
+    <h3 class="py-4">Ваши текущие заказы</h3>
+
+    <div class="row g-5">
+            <div class="col-lg-4  order-lg-last">
+                <h4 class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-primary">Найдено деталей</span>
+                    <span class="badge bg-primary rounded-pill">{{ obj_count }}</span>
+                </h4>
+                <form class="card p-2" method="get">
+                    <div class="row mb-3">
+                        <label class="col-xl-3 col-form-label">Поиск</label>
+                        <div class="col-xl-9">
+                            {{ form.filter }}
+                        </div>
+                    </div>
+                    <div class="container d-flex justify-content-center gap-2">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i>
+                            выбрать
+                        </button>
+                        <a class="btn btn-outline-primary" href="{% url 'ordered-parts' %}" role="button">
+                            <i class="bi bi-x-lg"></i>
+                            сбросить
+                        </a>
+                    </div>
+                </form>
+                <div class="card mt-2">
+                    <h5 class="card-header">Специалист по работе с заказами:</h5>
+                    <div class="card-body">
+                        <strong>{{ center.region.staff_user.last_name }} {{ center.region.staff_user.first_name }}</strong>                      
+                        <div><a href="mailto:{{ region.staff_user.email }}">{{ center.region.staff_user.email }}</a></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 d-grid gap-3">
+                {% if reports %}
+                    {% for report in reports %}
+                    <div>
+                        <div class="row border p-3">
+                            <div class="bg-light border border-dark rounded-3 mb-1">
+                                <h5>Отчет за {{ report.report_date|date:"F Y"|lower }} ({{ report.get_status_display }})</h5>
+                            </div>
+                            {% for record in records %}
+                                {% if record.report == report.pk %}  
+                                <div>
+                                    <h6>
+                                        {{ record.product__title }}
+                                        {{ record.model_description }}
+                                        SN:{{ record.serial_number }}
+                                    </h6>    
+                                    <ul>
+                                    {% for part  in parts %}
+                                        {% if part.record == record.pk %}
+                                            <li>
+                                                <div class="row justify-content-between">
+                                                    <div class="col-auto">
+                                                        {{ part.title }}-{{ part.count }}шт
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        {% if part.send_number %}
+                                                            {{ part.send_date|date:"j M Y" }}, {{ part.send_number }}
+                                                        {% else %}
+                                                            <span class="text-danger">обработка</span>
+                                                        {% endif %}
+                                                    </div>
+                                                <div>
+                                            </li>
+                                        {% endif %}                   
+                                    {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            {% endfor %}  
+                        </div>  
+                    </div>          
+                    {% endfor %}
+                {% else %}
+                <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+                {% endif %}
+            </div>
+        </div>
+
+         <!-- кнопка ВВЕРХ -->
+        {% if reports %}  
+            {% include 'inc/go_to_top_button.html' %}
+        {% endif %}
+
+        {% include 'inc/list_paginator.html' %}    
+
+    </div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

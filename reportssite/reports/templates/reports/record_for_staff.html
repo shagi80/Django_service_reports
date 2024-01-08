@@ -1,0 +1,454 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+{% load static %}
+
+{% block title %}
+    {{ block.super }}|{{ record.report.service_center }} за {{ record.report.report_date|date:"F Y"|lower }}
+{% endblock %}
+
+{% block content %}
+{% if request.user.is_staff %}
+    {% include 'inc/staff_navbar.html' %}
+{% else %}
+    {% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container">
+    <main class="row justify-content-between p-2">
+
+        <div class="col-lg-9 px-lg-4">
+            <!-- Заголовок -->
+            <div class="row border border-dark rounded shadow px-3 py-2 mb-2 bg-body rounded">
+                <div class="col-sm-10">
+                    <h3 class="mb-0 text-primary">
+                        {{ record.report.service_center }} за {{ record.report.report_date|date:"F Y"|lower }}
+                    </h3>
+                    <div style="font-size:0.8rem" class="text-muted">Номер записи: {{ record.pk }}</div>
+                </div>
+                <div class="col-sm-2">
+                    {% if record.verified %}
+                        <div class="text-center text-success p-2">
+                            <h6 class="my-0">принят</h6>
+                            <span class="fs-6">{{ record.verified_date|date:'d.m.y'}}</span>
+                        </div>
+                    {% else %}
+                        <h6 class="text-center text-danger p-2">не принят</h6>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Замечание к отчету -->
+            {% if record.remarks %}
+                <div class="row border border-dark rounded shadow p-3 mb-1 bg-body rounded justify-content-between">
+                    <div class="col-11">
+                        <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3">{{ record.remarks }}</strong>
+                    </div>
+                    {% if record.report.service_center.staff_user == request.user and record.report.status not in close_status %}
+                        <form method="POST" action="{% url 'record-delete-remark' %}" class="col-1 text-danger text-end">
+                            {% csrf_token %}
+                            <button type="submit" name="pk" value="{{ record.pk }}" class="btn btn-outline-link btn-sm">
+                                <span class="text-danger"><i class="bi bi-x-lg"></i></span>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!-- Некритичные ошибки -->
+            {% if record.errors %}
+                <div class="row border border-dark rounded shadow p-3 mb-2 bg-body rounded">
+                    <div class="col-12">
+                        <i class="bi bi-exclamation-square-fill text-warning"></i><strong class="px-3">{{ record.errors }}</strong>
+                    </div>
+                </div>
+            {% endif %}
+            <!-- Основная часть данных -->
+            <div class="row border border-dark rounded shadow p-3 my-2 bg-body rounded gy-1">
+                <div class="col-12 col-sm-3 text-muted">Вид ремонта</div>
+                <div class="col-12 col-sm-9">{{ record.get_work_type_display }}</div>
+                <div class="col-12 col-sm-3 text-muted">Тип продукции</div>
+                <div class="col-12 col-sm-9">{{ record.product }}</div>
+                <div class="col-12 col-sm-3 text-muted">Модель</div>
+                <div class="col-12 col-sm-9">
+                    {% if record.model_description %}
+                        {{ record.model_description }}
+                    {% else %}
+                        {{ record.model }}
+                    {% endif %}
+                </div>
+                <div class="col-12 col-sm-3 text-muted">Серийный номер</div>
+                <div class="col-12 col-sm-9">{{ record.serial_number }}</div>
+                <div class="col-12 col-sm-3 text-muted">Клиент</div>
+                <div class="col-12 col-sm-9">
+                    {% if record.client_type == 'organization' %}
+                        <div class="text-primary">это организация</div>
+                    {% endif %}
+                    <div>
+                        {% if record.client %}
+                            {{ record.client|default_if_none:"" }},
+                            {{ record.client_phone|default_if_none:"" }},
+                            {{ record.client_addr|default_if_none:"" }}
+                        {% else %}
+                            <span class="text-danger">нет данных о клиенте</span>
+                        {% endif %}
+                    </div>
+                    {% if record.client_email %}
+                        <div>{{ record.client_email }}</div>
+                    {% endif %}
+                </div>
+                {% if record.work_type == 'warranty' %}
+                    <div class="col-12 col-sm-3 text-muted">Дата продажи</div>
+                    <div class="col-12 col-sm-9">{{ record.buy_date }}</div>
+                {% endif %}
+                <div class="col-12 col-sm-3 text-muted">Даты ремонта</div>
+                <div class="col-12 col-sm-9">{{ record.start_date }} - {{ record.end_date }}</div>
+                <div class="col-12 col-sm-3 text-muted">Несправность</div>
+                <div class="col-12 col-sm-9">{{ record.problem_description }}</div>
+                <div class="col-12 col-sm-3 text-muted">Код</div>
+                <div class="col-12 col-sm-9">{{ record.code }}</div>
+                <div class="col-12 col-sm-3 text-muted">Работы</div>
+                <div class="col-12 col-sm-9">{{ record.work_description }}</div>
+                {% if record.note %}
+                    <div class="col-12 col-sm-3 text-muted">Примечание</div>
+                    <div class="col-12 col-sm-9 text-danger">{{ record.note }}</div>
+                {% endif %}
+                {% if record.reportsparts_set.all %}
+                    <div class="row d-md-none">
+                        <div class="col-12 text-muted">Детали</div>
+                        {% for part in record.reportsparts_set.all %}
+                            <div id="partDiv-{{ part.pk}}" class="row ms-2 mt-1 border">
+                                <div class="col-1">
+                                    {% if not part.order_date %}
+                                        <i class="bi bi-coin"></i>
+                                    {% else %}
+                                        <i class="bi bi-envelope-check-fill"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="col-7">
+                                    {{ part.title }}
+                                </div>
+                                <div class="col-3 text-center">
+                                    {% if not part.order_date %}
+                                        {{ part.count }} X {{ part.price }}
+                                    {% else %}
+                                        {{ part.count }}
+                                    {% endif %}
+                                </div>
+                                <div class="col-1 text-danger text-center">
+                                    {% if record.report.service_center.staff_user == request.user and  not record.verified and record.report.status not in close_status %}
+                                        <i role="button" class="bi bi-trash-fill part-del" data-pk="{{ part.pk }}" data-send="{{ part.send_date}}" data-bs-toggle="modal" data-bs-target="#deletePartModal"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12">
+                                    {% if not part.order_date.value %}
+                                        Документ:  {{ part.document }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="row d-none d-md-block mt-1">
+                        <div class="col-12 text-muted">Детали</div>
+                        <div class="col-12 py-1">
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                <tr class="table-light">
+                                    <td scope="col">Тип</td>
+                                    <td scope="col">Наименование</td>
+                                    <td scope="col">Кол</td>
+                                    <td scope="col">Цена</td>
+                                    <td scope="col">Документ</td>
+                                    {% if record.report.service_center.staff_user == request.user and not record.verified and record.report.status not in close_status %}
+                                        <td scope="col"></td>
+                                    {% endif %}
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for part in record.reportsparts_set.all %}
+                                    <tr id="partRow-{{ part.pk }}">
+                                        <td>
+                                            {% if not part.order_date %}
+                                                <i class="bi bi-coin"></i>
+                                            {% else %}
+                                                <i class="bi bi-envelope-check-fill"></i>
+                                            {% endif %}
+                                        </th>
+                                        <td>{{ part.title }}</td>
+                                        <td>{{ part.count }}</td>
+                                        <td>
+                                            {% if not part.order_date %}
+                                                {{ part.price }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if not part.order_date %}
+                                                {{ part.document }}
+                                            {% endif %}
+                                        </td>
+                                        {% if record.report.service_center.staff_user == request.user and not record.verified and record.report.status not in close_status %}
+                                            <td class="text-center text-danger">
+                                                <i role="button" class="bi bi-trash-fill part-del" data-pk="{{ part.pk }}" data-send="{{ part.send_date}}" data-bs-toggle="modal" data-bs-target="#deletePartModal"></i>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Модальное окно удаления детали -->
+                    <div class="modal fade" id="deletePartModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deletePartModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{% url 'record-part-delete-staff' %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                <h5 class="modal-title text-danger" id="deletePartModalLabel">ВНИМАНИЕ !</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <h6>Вы действительно хотите удалить деталь ?</h6>
+                                    <div id="partSendDiv"></div>
+                                    <h6>Сообщение для сервиса:</h6>
+                                    <textarea id="partDeleteMessage" class="form-control mb-2" rows=3 name="message"></textarea>
+                                    <p class="text-muted text-center mb-0">В сервисный центр будет отправлено автоматическое уведомление.</p>
+                                    <input id="partDeleteKey" name="delete" hidden >
+                                </div>
+                                <div class="modal-footer">
+                                    <button id="partDeleteBtn" type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                                    <div id="partDeleteBody" style="display: none">
+                                        <button type="submit" class="btn btn-danger btn-sm" name="delete" value="{{ record.pk }}" disabled>
+                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div> Удалить
+                                        </button>    
+                                    </div>
+                                </div>
+                        </form>
+                        </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Файлы и Итог -->
+            <div class="row">
+                <!-- Файлы -->
+                {% if record.recorddocumnent_set.all %}
+                    <div class="col-md-8 ">
+                        <div class="row me-md-1 border border-dark rounded shadow p-3 mb-2 mb-md-0 bg-body rounded">
+                            <h5>Приложенные файлы:</h5>
+                            {% for doc in record.recorddocumnent_set.all %}
+                                <div class="col-12"><a href='{{ doc.file.url }}' class='text-decoration-none' target="_blank">{{ doc.title }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}</a></div>                        
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Итог -->
+                <div class="col-md-4">
+                    <div class="row border border-dark rounded shadow p-3 bg-body rounded">
+                        <h5>Итоги:</h5>
+                        {% if record.move_cost %}
+                            <div class="col-12 col-sm-3 text-muted">Выезд</div>
+                            <div class="col-12 col-sm-9">{{ record.move_cost }} руб</div>
+                        {% endif %}
+                        {% if record.parts_cost %}
+                            <div class="col-12 col-sm-3 text-muted">Детали</div>
+                            <div class="col-12 col-sm-9">{{ record.parts_cost }} руб</div>
+                        {% endif %}
+                        <div class="col-12 col-sm-3 text-muted">Работы</div>
+                        <div class="col-12 col-sm-9">{{ record.work_cost }} руб</div>
+                        <div class="col-12 col-sm-3"><strong>Итого</strong></div>
+                        <div class="col-12 col-sm-9"><strong>{{ record.total_cost }} руб</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col col-lg-3 my-3 my-lg-0">
+            <!-- Действия -->
+            <div class="row border border-dark rounded shadow p-3 bg-body rounded">
+                <h5>Действия</h5>
+                <div class="col-12 text-center gap-2">
+                    {% if record.report.service_center.staff_user == request.user and not record.verified and record.report.status not in close_status %}
+                        <button type="button" class="btn btn-outline-primary my-1" data-bs-toggle="modal" data-bs-target="#acceptModal">Принять</button>
+                        <!-- Модальное окно подтверждения принятия отчета -->
+                        <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="POST" action="{% url 'record-verified' %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="acceptModalLabel">Принять ремонт ?</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-primary btn-sm" name="save" value="{{ record.pk }}">Принять</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger my-1" data-bs-toggle="modal" data-bs-target="#deleteModal">Удалить</button>
+                        <!-- Модальное окно подтверждения удаление отчета -->
+                        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="POST" action="{% url 'record-delete-staff' %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header">
+                                            <h5 class="modal-title text-danger" id="deleteModalLabel">ВНИМАНИЕ !</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <h6>Вы действительно хотите удалить этот ремонт ?</h6>
+                                            {% if record.reportsparts_set.all %}
+                                                <p class="mb-2">Вместе с ремонтом буду удалены и детали. Убедитесь, что они еще не отправлены или примите решение о том, как будет учтена их стоимость !</p>
+                                            {% endif %}
+                                            <h6>Сообщение для сервиса:</h6>
+                                            <textarea class="form-control mb-2" rows=3 name="message"></textarea>
+                                            <p class="text-muted text-center mb-0">В сервисный центр будет отправлено автоматическое уведомление.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button id="recordDeleteBtn" type="submit" class="btn btn-danger btn-sm" name="delete" value="{{ record.pk }}">Удалить</button>
+                                            <div id="recordDeleteBody" style="display: none">
+                                                <button type="submit" class="btn btn-danger btn-sm" name="delete" value="{{ record.pk }}" disabled>
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div> Удалить
+                                                </button>    
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if record.report.service_center.staff_user == request.user and record.verified and record.report.status not in close_status %}
+                        <button type="button" class="btn btn-outline-danger my-1" data-bs-toggle="modal" data-bs-target="#cancelAcceptModal">Не принимать</button>
+                        <!-- Модальное окно подтверждения принятия отчета -->
+                        <div class="modal fade" id="cancelAcceptModal" tabindex="-1" aria-labelledby="cancelAcceptModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="POST" action="{% url 'record-cancel-verified' %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="cancelAcceptModalLabel">Отменить прием ремонта ?</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-danger btn-sm" name="save" value="{{ record.pk }}">Отменить</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <a href="{% url 'report_page' record.report.pk %}#record-{{record.pk}}" class="btn btn-outline-secondary my-1">Закрыть</a>
+                </div>
+            </div>
+            <!-- Замечания к отчету -->
+            {% if not record.verified or record.recordmembers_set.all %}
+                <div class="row mt-2 border border-dark rounded shadow p-3 bg-body">               
+                    <h6>Замечания к ремонту:</h6>
+                    <div class="col-12">
+                        {% if not record.verified and record.report.status not in close_status %}
+                            <form method="POST" action="{% url 'record-add-member' %}">
+                                {% csrf_token %}
+                                <textarea id="memberText" class="form-control" rows=3 name="text" oninput="display();"></textarea>
+                                <input name="pk" value="{{ record.pk }}" hidden>
+                                <div class="text-center mt-2">
+                                    {% if record.report.service_center.staff_user == request.user %}
+                                    <button id="memberUserBtn" disabled type="submit" name="mode" value="for_user" class="btn btn-outline-danger btn-sm">
+                                        для сервиса
+                                    </button>
+                                    {% endif %}
+                                    <button id="memberStaffBtn" disabled type="submit"  name="mode" value="for_staff" class="btn btn-outline-dark btn-sm">
+                                        {% if record.report.service_center.staff_user == request.user %}
+                                        для себя
+                                        {% else %}
+                                        Добавить
+                                        {% endif %}
+                                    </button>
+                                </div>
+                            </form>
+                        {% endif %}                  
+                    </div>
+                    {% if record.recordmembers_set.all %}
+                        <form method="POST" action="{% url 'record-delete-member' %}"> 
+                            {% csrf_token %}                     
+                            <hr>
+                            {% for member in record.recordmembers_set.all %}
+                            <div class="row mt-2 border border-dark rounded shadow bg-light" style="font-size:0.9em">
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div class="mt-2">
+                                        {% if member.for_user %}
+                                            <strong class="text-danger">Для сервиса</strong>
+                                        {% else %}
+                                            <strong>Для себя</strong>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        {% if member.author == request.user %}
+                                        <button type="submit" name="pk" value="{{ member.pk }}" class="btn btn-outline-link btn-sm">
+                                            <span class="text-danger"><i class="bi bi-x-lg"></i></span>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <span>{{ member.text }}</span>
+                                <p class="mt-0 text-muted">{{ member.created_at|date:'d.M.y H:i:s'}}  {{ member.author }}</p>
+                            </div>
+                            {% endfor %}
+                        </form> 
+                    {% endif %}  
+                </div>
+            {% endif %}
+        </div>
+    </main>
+    
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    
+    // Установка параметра PK модального окна удаления детали
+    $(".part-del").click(function(event){
+        pk = $(event.target).attr("data-pk");
+        send_date = $(event.target).attr("data-send");
+        if (send_date != "None") {
+            $("#partSendDiv").html("<p class='text-danger'>Эта деталь уже отправлена в сервисный центр " + send_date + " Необходимо учесть ее стоиомсть при оплате отчета! </p>")
+        } else {
+            $("#partSendDiv").html("<p>Эта деталь еще не отправлена. Не забудьте отментить отправку.</p>") 
+        };
+        $("#partDeleteKey").val(pk);    
+    })
+
+    // срытие кнопки "удвлить" в модельном окне удаления записи
+    $("#recordDeleteBtn").click(function(){
+        $(this).hide()
+        $("#recordDeleteBody").css("display", "block");
+    })
+
+    // срытие кнопки "удвлить" в модельном окне удаления детали
+    $("#partDeleteBtn").click(function(){
+        $(this).hide()
+        $("#partDeleteBody").css("display", "block");
+    })
+
+    var display = function (){
+        if ($("#memberText").val() != ''){
+            $("#memberUserBtn").removeAttr('disabled');
+            $("#memberStaffBtn").removeAttr('disabled');
+        } else {
+            $("#memberUserBtn").attr('disabled', true);
+            $("#memberStaffBtn").attr('disabled', true);    
+        }
+    };
+    
+</script>
+
+
+
+{% endblock %}

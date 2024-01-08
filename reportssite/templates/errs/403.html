@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+
+{% block title %}
+    {{ block.super }}|Ошибка 403
+{% endblock %}
+
+{% block content %}
+
+{% if request.user.is_staff %}
+    {% include 'inc/staff_navbar.html' %}
+{% else %}
+    {% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<main class="container my-5 text-center">
+    <h1>Ошибка 403</h1>
+    <h1>Извините, что-то пошло не так !</h1>
+    <h4>У вас нет доступа к этой странице.</h4>
+</main>
+
+{% include 'inc/footer.html' %}
+
+
+
+{% endblock %}

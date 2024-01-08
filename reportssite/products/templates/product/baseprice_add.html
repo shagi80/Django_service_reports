@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container col-lg-5">
+    <div class="row py-4 col-12">
+        <h3>{{ title }}</h3>
+    </div>
+    <form class="row py-5 g-3" method="post">
+        {% csrf_token %}
+        <div class="row mb-3">
+            <label class="col-sm-4 col-form-label">Тип прайса</label>
+            <div class="col-sm-8"> {{ form.price_type }} </div>
+        </div>
+        <div class="row mb-3">
+            <label class="col-sm-4 col-form-label">Тип продукции</label>
+            <div class="col-sm-8"> {{ form.product }} </div>
+        </div>
+        <div class="row mb-3">
+            <label class="col-sm-4 col-form-label">Тип ремонта</label>
+            <div class="col-sm-8"> {{ form.repair_type }} </div>
+        </div>
+        <div class="row mb-3">
+            <label class="col-sm-4 col-form-label">Расценка</label>
+            <div class="col-sm-3"> {{ form.price }}  </div>
+            <label class="col-sm-5 col-form-label">руб</label>
+        </div>
+        <div class="row mt-5 justify-content-between">
+            <div class="col-lg-1">
+                {% if form.instance and form.instance.pk %}
+                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                <a class="btn btn-outline-danger" href="{% url 'price_delete_page' form.instance.pk %}?next={{next}}" role="button">Удалить</a>
+                {% endif %}
+                {% endif %}
+            </div>
+            <div class="col-lg-11 text-end">
+                {% if form.instance and form.instance.pk %}
+                <button type="submit" class="btn btn-primary" name="close">Записать и закрыть</button>
+                {% else %}
+                <button type="submit" class="btn btn-outline-secondary" name="close">Записать и закрыть</button>
+                <button type="submit" class="btn btn-primary" name="save">Записать и добавить еще</button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+
+{% include 'inc/footer.html' %}
+{% endblock %}

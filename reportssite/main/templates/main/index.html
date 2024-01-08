@@ -1,0 +1,400 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {{ block.super }}|Вход
+{% endblock %}
+
+{% block content %}
+    <div id="TopLevel"></div>
+
+    {% include 'inc/show_message.html' %}
+
+    <div class="container-lg" style="max-width:992px">
+        <div class="row bg-primary justify-content-between p-3">
+            <div class="col-sm-auto">
+                <h1 class="text-white text-center text-sm-start">RENOVA</h1>
+            </div>
+            <div class="col-sm-auto align-self-center">
+                <div class="d-flex flex-wrap justify-content-center">
+                    <h5><a class="nav-link text-white" href="https://renova-service.ru/help/">О портале</a></h5>
+                    <h5><a class="nav-link text-white" href="#hot_line">Горячая линия</a></h5>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row p-sm-4 my-4 justify-content-between">
+            <div class="col-md-6 text-center align-self-center">
+                <h4>Партнерская программа ТМ <span class="text-primary">RENOVA</span> - залог процветания вашего бизнеса !</h4>
+                <p>
+                    Продукция ТМ RENOVA очень востребованна на рынках России и ближнего зарубежья
+                    и для удобства наших потребителей мы открыты к сотрудничеству с
+                    сервисными центрами в любом уголке страны.
+                </p>
+                <button type="button" class="btn my-4" style="background-color:#E5E4EC;" data-bs-toggle="modal" data-bs-target="#Modal">
+                    <h5 class="px-4 py-1">Зарегистрироваться</h5>
+                </button>
+            </div>
+            <div class="col-md-5 text-center">
+                <form method="post" class="p-4 rounded" style="background-color:#E5E4EC;">
+                    {% csrf_token %}
+                    <h5 class="text-center  mb-4">Войти в личный кабинет</h5>
+                    <div class="form-floating my-4">
+                        {{ form.username }}
+                        <label>Имя пользователя</label>
+                        <div class="invalid-feedback">
+                            {{ form.username.errors }}
+                        </div>
+                    </div>
+                    <div class="form-floating my-4">
+                        {{ form.password }}
+                        <label>Пароль</label>
+                        <div class="invalid-feedback">
+                            {{ form.password.errors }}
+                        </div>
+                    </div>
+                    <button type="submit" class="my-4 btn btn-lg btn-primary w-100" type="submit">Вход</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="row px-sm-4 py-4 mb-5" style="background-color:#CFD7F0;">
+            <h5 class="col-sm-8 text-center text-md-start">
+                Основная наша продукция - <strong>бытовые полуавтоматические стиральные машины.</strong>
+                С 2009 года эта продукция производится на нашем заводе в республике Адыгея и с 2011 года
+                на заводе в Иркутской области.
+            </h5>
+            <div class="col-sm-4 d-none d-sm-block">
+                <img src='{% static "main/pasm.png" %}' class="position-absolute" style="width:25%;">
+            </div>
+        </div>
+
+        <div class="row p-4 justify-content-center d-sm-none">
+            <img src='{% static "main/pasm.png" %}' style="width:80%;">
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-8 text-center text-sm-start">
+                <h3 class="text-primary">ДРУГИЕ НАШИ НАПРАВЛЕНИЯ</h3>
+                <hr class="text-primary" style="height:5px;">
+                <div class="row justify-content-center">
+                    <div class="col-7 col-sm-4 col-md-3 p-2 text-center">
+                        <div style="height:170px">
+                            <img src='{% static "main/image-3.png" %}' >
+                        </div>
+                        <p class="text-muted text-center">Техника для дома - крупная и мелкая бытовая техника.</p>
+                    </div>
+                    <div class="col-sm-4 col-md-3 p-2 text-center">
+                        <div style="height:170px">
+                            <img src='{% static "main/image-4.png" %}' >
+                        </div>
+                        <p class="text-muted text-center">Бытовые и полупромышленные кондиционеры.</p>
+                    </div>
+                    <div class="col-sm-4 col-md-3 p-2 text-center">
+                        <div style="height:170px">
+                            <img src='{% static "main/image-2.png" %}'>
+                        </div>
+                        <p class="text-muted text-center">Офисные диспенсеры и бытовые морозильные лари.</p>
+                    </div>
+                    <div class="col-sm-6 col-md-3 p-2 text-center">
+                        <div style="height:170px">
+                            <img src='{% static "main/image-5.png" %}'>
+                        </div>
+                        <p class="text-muted text-center">Велосипеды для подростков и взрослых.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="text-center text-sm-start">
+                <div class="col-md-8 text-center text-sm-start">
+                    <h3 class="text-primary">АССОРТИМЕНТ И ТОРГОВЫЕ МАРКИ</h3>
+                    <hr class="text-primary" style="height:5px;">
+                </div>
+                <p>
+                    Под торговыми марками RENOVA, СЛАВДА и EVGO
+                    производится в России и импортируется из Китая и Турции
+                    следующая бытовая техника:
+                </p>
+                <div class="d-flex justify-content-center gap-5 mt-3 flex-wrap">
+                    <div><img src='{% static "main/tm4.png" %}'></div>
+                    <div><img src='{% static "main/tm2.png" %}'></div>
+                    <div><img src='{% static "main/tm3.png" %}'></div>
+                </div>
+                <div class="row mt-4 text-muted">
+                    <div class="col-sm-2">
+                        <img src='{% static "main/flag-1.png" %}'>
+                    </div>
+                    <div class="col-sm-10 col-md-7">
+                        <div>Полуавтоматические стиральные машины</div>
+                        <div>Бытовые сушилки для овощей и фруктов</div>
+                        <div>Отдельностоящие газовые и электро плиты</div>
+                        <div>LCD телевизоры с диагональю до 60"</div>
+                        <div>Встраиваемые электродукховки</div>
+                    </div>
+                </div>         
+                <hr class="col-12 my-3">
+                <div class="row mt-4 text-muted justify-content-end">
+                    <div class="col-sm-2">
+                        <img src='{% static "main/flag-2.png" %}'>
+                    </div>
+                    <div class="col-sm-10 col-md-7">
+                        <div>Бытовые горизонтальные морозильные лари</div>
+                        <div>Бытовые сплит-системы</div>
+                        <div>Однокамерные и двухкамерные холодильники</div>
+                        <div>Встраиваемые газовые варочные панели</div>
+                        <div>Чайники и другая мелкая бытовая кухонная техника</div>
+                        <div>Бытовые автоматические стиральные машины</div>
+                        <div>Настольные и напольные диспенсеры для воды</div>
+                        <div>Тепловентиляторы и конвекторы</div>
+                    </div>
+                </div>
+                <hr class="col-12 my-3">
+                <div class="row mt-4 text-muted">
+                    <div class="col-sm-2">
+                        <img src='{% static "main/flag-3.png" %}'>
+                    </div>
+                    <div class="col-sm-10 col-md-7">
+                        <div>Встариваемые электрические варочные панели</div>
+                        <div>Кухонные вытяжки</div>
+                        <div>и многое другое ... </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row px-sm-4 py-4 my-5 text-center" style="background-color:#CFD7F0;">
+            <h5>Более подробно с ассортиментом нашей продукции можно ознакомится на сайте</h5>
+            <a href="https://re-nova.com/"><h5>www.re-nova.com</h5></a>
+        </div>
+
+        <div class="row mt-5">
+            <div class="text-center text-sm-start">
+                <div class="col-md-8 text-center text-sm-start">
+                    <h3 class="text-primary">ГДЕ ПОКУПАЮТ НАШУ ТЕХНИКУ</h3>
+                    <hr class="text-primary" style="height:5px;">
+                </div>
+                <div class="d-flex justify-content-center gap-5 mt-5 flex-wrap">
+                    <div><img src='{% static "main/7.png" %}'></div>
+                    <div><img src='{% static "main/8.png" %}'></div>
+                    <div><img src='{% static "main/9.png" %}'></div>
+                    <div><img src='{% static "main/10.png" %}'></div>
+                    <div><img src='{% static "main/11.png" %}'></div>
+                </div>
+                <div class="row mt-4 justify-content-center">
+                    <div class="col-sm-1"><img src='{% static "main/point.png" %}'></div>
+                    <div class="col-sm-11 col-md-8">
+                        а также различные региональные сети в каждом регионе России, Беларусии,
+                        Казахстане, в Крыму и на новых территориях...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="text-center text-sm-start">
+                <div class="col-md-8 text-center text-sm-start">
+                    <h3 class="text-primary">ЧТО ПОПАДАЕТ В РЕМОНТ</h3>
+                    <hr class="text-primary" style="height:5px;">
+                </div>
+                <div class="row mt-4">
+                    <div class="col-sm-1"><img src='{% static "main/point.png" %}'></div>
+                    <div class="col-sm-11">
+                        Наиболее продаваемый наш товар это бытовые полуавтоматические
+                        стиральные машины. В среднем за год в сервисные центры
+                        попадает до 3% единиц этой продукции от общего производимого количества.
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-sm-1"><img src='{% static "main/point.png" %}'></div>
+                    <div class="col-sm-11">
+                        Следующие наиболее часто встречающиеся в ремонтных
+                        мастерских наши товары это бытовые электросушилки для овощей и
+                        фруктов и бытовые морозильные лари.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row px-sm-4 py-4 my-5 text-center" style="background-color:#CFD7F0;">
+            <h5>Если вы готовы качественно обслужит нашу технику, то мы рады предоставить вам</h5>
+            <h5 class="text-primary">выгодные условия сотрудничества.</h5>
+        </div>
+
+        <div class="row mt-5">
+            <div class="text-center text-sm-start">
+                <div class="col-md-8 text-center text-sm-start">
+                    <h3 class="text-primary">ОСНОВНЫЕ ПРИЦИПЫ СОТРУДНИЧЕСТВА</h3>
+                    <hr class="text-primary" style="height:5px;">
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-5 mt-3 text-center text-md-start">
+                        <img src='{% static "main/13.png" %}'>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="row mt-4">
+                            <div class="col-sm-1"><img src='{% static "main/point.png" %}'></div>
+                            <div class="col-sm-11">
+                                Запасные части для осуществления ремонтов предоставляются нам по
+                                заявкам на конкретный ремонт абсолютно бесплатно и без каких либо
+                                финансовых обязательств. 
+                                Причем на основную нашу технику запасные части у нас есть всегда.
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-sm-1"><img src='{% static "main/point.png" %}'></div>
+                            <div class="col-sm-11">
+                                Для осуществления заказа запасных частей и
+                                предоставления отчетности о проделанной Вами
+                                работе у нас используется специальный и очень
+                                удобный интернет-сайт.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="text-center text-sm-start">
+                <div class="col-md-8 text-center text-sm-start">
+                    <h3 class="text-primary">ПОРЯДОК ВЗАИМОДЕЙСТВИЯ</h3>
+                    <hr class="text-primary" style="height:5px;">
+                </div>
+                <div class="row">
+                    <div class="row mt-3">
+                        <div class="row col-md-8">
+                            <div class="col-sm-2"><img src='{% static "main/num1.png" %}'></div>
+                            <div class="col-sm-10">
+                                Вы получаете в ремонт изделие. После осмотра и
+                                выяснения причины неисправности вы заносите
+                                данные об этом изделии на сайт - «открываете
+                                ремонт». Там же вы указываете перечень запасных
+                                частей, которые вам нужны.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3 justify-content-md-end">
+                        <div class="row col-md-8">
+                            <div class="col-sm-2"><img src='{% static "main/num2.png" %}'></div>
+                            <div class="col-sm-10">
+                                Наш сотрудник сразу же видит
+                                сделанную вами запись, собирает
+                                необходимые запасные части
+                                и отправляет их вам по удобному
+                                для вас адресу Почтой России или
+                                СДЭКом в течении трех рабочих дней.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3 ">
+                        <div class="row col-md-8">
+                            <div class="col-sm-2"><img src='{% static "main/num3.png" %}'></div>
+                            <div class="col-sm-10">
+                                После окончания ремонта вы просто отмечаете в ранее сделанной записи
+                                на сайте, что ремонт закончен, и в конце месяца отправляете все
+                                накопившиеся за этот период ремонты на проверку нашему менеджеру на этом же
+                                сайте. Причем сумма, которую мы должны будем вам оплатить, рассчитывается
+                                автоматически и сразу видна Вам при записи данных о ремонте.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3 justify-content-md-end">
+                        <div class="row col-md-8">
+                            <div class="col-sm-2"><img src='{% static "main/num4.png" %}'></div>
+                            <div class="col-sm-10">
+                                От Вас не требуется никаких бумажных документов — все документы пересылаются через сайт.
+                                Отчеты проверяются в течение недели, и уже через 10-14 дней
+                                <strong class="text-primary"> вы получите деньги в полном объеме.</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="hot_line" class="row mt-5">
+            <div class="text-center text-sm-start">
+                <div class="col-md-8 text-center text-sm-start">
+                    <h3 class="text-primary">ГОРЯЧАЯ ЛИНИЯ</h3>
+                    <hr class="text-primary" style="height:5px;">
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-5">
+                        <div class="row mt-4">
+                            <div class="col-sm-1"><img src='{% static "main/point.png" %}'></div>
+                            <div class="col-sm-11">
+                                «Горячая линия» технической поддержки, на которой можно получить
+                                любую техническую информацию или уточнить вопросы, связанные с
+                                отчетностью, работает
+                                <strong class="text-primary"> с понедельника по пятницу с 9-00 до 17-00.</strong>
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-sm-1"><img src='{% static "main/point.png" %}'></div>
+                            <div class="col-sm-11">
+                                Телефон горячей линии <strong class="text-primary">8 (800) 200-46-36</strong>, звонок бесплатный.
+                                Наши специалисты готовы ответить а любой ваш вопрос,
+                                предоставить любую техническую информацию и помочь в решении
+                                любой проблемы с нашей продукции.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <img src='{% static "main/16.png" %}'>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row px-sm-4 py-4 mb-5 text-center" style="background-color:#CFD7F0;">
+            <h5>
+                Подробнее об порядке составления и проверки
+                отчетности может рассказать
+                менеджер по сервису.
+            </h5>
+            <h5>Просто позвоните</h5>
+            <h5><strong class="text-primary">8 (800) 200-46-36</strong></h5>
+        </div>
+
+    </div>
+
+<div id="btn_top" hidden>
+    {% include 'inc/go_to_top_button.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+
+<!-- Modal -->
+<div class="modal fade" id="Modal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addModalLabel">Регистрация на сайте</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">Для получения логина и пароля обратитесь к разработчику</div> 
+                <div class="text-center"><a href="mailto:sergey.shaginyan@re-nova.com">sergey.shaginyan@re-nova.com</a></div>    
+                <div class="text-center text-muted mt-2 mb-3">Обязательно укажите в тексте письма наименование своего сервисного центра !</div>  
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+
+    $(window).on("scroll", function() {
+            if ($(window).scrollTop() > 50) {
+                $("#btn_top").prop("hidden", false)
+            } else {
+                $("#btn_top").prop("hidden", true)
+            }
+        });
+
+</script>
+
+{% endblock %}

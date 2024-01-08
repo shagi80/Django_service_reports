@@ -1,0 +1,59 @@
+{% for item in items %}
+<div class="row col-12 px-3 bg-white">
+    {% if item.code.is_folder %}
+    <div class="col-sm-12">
+        <strong>{{ item.code }}</strong>
+    </div>
+    {% elif item.code.is_active or user.is_staff %}
+    <div class="col-sm-1">
+        {{ item.code.code }}
+    </div>
+    <div class="col-sm-6">
+        {% if user == 'general_staff' %}
+        <a href="{{ item.code.get_absolute_url }}" style="text-decoration: none">{{ item.code.title }}</a>
+        {% else %}
+        {{ item.code.title }}
+        {% endif %}
+    </div>
+    <div class="col-sm-3">
+        {{ item.code.get_repair_type_display }}
+    </div>
+    <div class="col-sm-2">
+        {% if not item.code.is_active %}
+        <strong class="text-danger">не активен</strong>
+        {% else %}
+            {% if user == 'general_staff' %}
+                {% if center %}
+                    {% if item.individual_price %}
+                        <a href="{% url 'centerprice_update_page' item.individual_price.pk %}?next={% url 'code_and_prices_page' center.pk %}"style="text-decoration: none">{{ item.prices }}</a>
+                    {% else %}
+                        {% if item.prices %}
+                        {{ item.prices }}
+                        {% endif %}
+                    <a href="{% url 'centerprice_add_page' item.code.pk center.pk %}?next={% url 'code_and_prices_page' center.pk %}" style="text-decoration: none">
+                        <i class="bi bi-plus-square"></i>
+                    </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'code_prices_page' item.code.pk %}" style="text-decoration: none">
+                        {% if item.prices %}
+                            {% if item.prices %}
+                            {{ item.prices }}
+                            {% endif %}
+                        {% else %}
+                        <i class="bi bi-plus-square"></i>
+                        {% endif %}
+                    </a>
+                {% endif %}
+            {% else %}
+                {% if item.prices %}
+                {{ item.prices }}
+                {% else %}
+                ---
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}

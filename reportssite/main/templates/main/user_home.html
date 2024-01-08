@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+
+{% block title %}
+    {{ block.super }}|Главная
+{% endblock %}
+
+{% block content %}
+{% include 'inc/user_navbar.html' %}
+
+<main class="container py-4">
+    <div class="row">
+        <!-- Правая боковая панель -->
+        <div class="col-lg-4 order-lg-last ps-lg-5 mb-5">
+            <!-- Контакты менеджера -->
+            <div class="card">
+                <h5 class="card-header">Ваш менеджер:</h5>
+                <div class="card-body">
+                    <p class="card-text mb-0"><strong>ФИО: </strong>Шеуджен Фатима Нальбиевна</p>
+                    <p class="card-text mb-0"><strong>E-mail: </strong> {{ senter.staff_user.email }}</p>
+                    <p class="card-text"><strong>Телефон: </strong> 8(988)509-03-40</p>
+                </div>
+            </div>
+            <!-- Адрес СЦ -->
+            <div class="card mt-1">
+                <h5 class="card-header">Ваши контакты:</h5>
+                <div class="card-body">
+                    <p class="card-text mb-0"><strong>Почтовый адрес: </strong> {{ senter.post_addr }}</p>
+                    <p class="card-text"><strong>E-mail: </strong> {{ senter.user.email }}</p>
+                    <figure class="text-center">
+                        <small>Если вы нашли ошибку в своих контактных данных пожалуйста сообщите нам.</small>
+                    </figure>
+                </div>
+            </div>
+            <!-- Заказанные запчасти -->
+            {% if parts %}
+            <div class="card mt-1">
+                <h5 class="card-header">Ваши заказы:</h5>
+                <div class="card-body">
+                    <ul>
+                    {% for part in parts %}
+                    <li class="card-text"> {{ part.title }} - {{ part.count }} шт</li>
+                    {% endfor %}
+                    </ul>
+                    <div class="text-center">
+                        <a class="btn btn-outline-secondary" href="{% url 'ordered-parts' %}" role="button">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <!-- Вывод отчетов -->
+        <div class="col-lg-4 px-2 mb-3">
+            <div class="row mb-3 justify-content-between">
+                <h4 class="col-auto">Последние отчеты:</h4>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newReport">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    <!-- Modal -->
+                    <div class="modal fade" id="newReport" tabindex="-1" aria-labelledby="newReportLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="newReportLabel">Добавление отчета</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form method="POST" action="{% url 'report-add' %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <div class="row g-2 text-start">
+                                            <div class="col-xl-4">Отчетный период:</div>
+                                            <div class="col-md-5">{{ rep_form.month }}</div>
+                                            <div class="col-md-3">{{ rep_form.year }}</div>
+                                            <div class="col-xl-4">Примечание:</div>
+                                            <div class="col-md-8">{{ rep_form.note }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-primary btn-sm">Добавить</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% for report in reports %}
+                <div class="row px-3 mb-2">
+                    <div class="col shadow p-4 border border-dark rounded" >            
+                        <!-- Заголовок -->
+                        <div class="row justify-content-between">
+                            <div class="col-auto">
+                                <h5>Отчет за {{ report.report_date|date:"F Y"|lower }}</h5>
+                                <!--Статус-->
+                                <div>
+                                        {% if report.status == 'draft' %}
+                                            <h5 class="text-muted">{{ report.get_status_display }}</h5>
+                                        {% elif report.status == 'refinement' %}
+                                            <h5 class="text-danger">{{ report.get_status_display }}</h5>
+                                        {% elif report.status == 'send' or report.status == 'send_again' or report.status == 'received' %}
+                                            <h5 class="text-warning">
+                                                {{ report.get_status_display }}
+                                                {% if report.send_date and report.status != 'received' %}
+                                                    {{ report.send_date|date:" d.m.y" }}
+                                                {% endif %}
+                                            </h5>
+                                        {% elif report.status == 'verified' or report.status == 'accepted' %}
+                                            <h5 class="text-info">{{ report.get_status_display }}</h5>
+                                        {% else %}
+                                            <h5 class="text-success">{{ report.get_status_display }}</h5>
+                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-auto text-end">
+                                <a href="{% url 'report_page' report.pk %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <!--Итоги-->
+                        <div class="row">
+                            <h6 class="col-5">Ремонты: {{ report.records_count }}</h6>
+                            <h6 class="col-7">Итого: {{ report.total_cost }} руб</h6>
+                        </div>
+                        <!--Файлы-->
+                        <div class="row">
+                            {% for doc in report.reportdocumnent_set.all %}
+                                <div class="row col-auto"><a href='{{ doc.file.url }}' class='text-decoration-none' target="_blank">{{ doc.get_title_display }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}</a></div>                        
+                            {% empty %}               
+                                <span class="text-danger"><i class="bi bi-envelope"></i> нет платежных документов</span>
+                            {% endfor %}
+                        </div>
+                        <!--Примечание-->
+                        {% if report.note %}
+                            <div class="col mt-2">
+                                <i class="bi bi-info-square"></i><label class="px-3">{{ report.note }}</label>
+                            </div>
+                        {% endif %}
+                        <!--Флаг записей с ошибками-->
+                        {% if report.have_fault %}
+                            <div class="col mt-2">
+                                <i class="bi bi-exclamation-square-fill text-warning"></i><strong class="px-3">есть записи с ошибками !</strong>
+                            </div>
+                        {% endif %} 
+                    </div>
+                </div>
+            {% empty%}
+                <label class="col-sm-12 text-center"><h5 class="text-muted">Отчетов нет ..</h5></label>
+            {% endfor %} 
+            {% if reports %}
+                <div class="col-12 text-center mt-5">
+                    <a href="{% url 'reports_user_list' %}" role="button" class="btn btn-outline-primary">Все отчеты</a>
+                </div>
+            {% endif %}   
+        </div>
+        <!-- Вывод отчетов -->
+        <div class="col-lg-4 px-2">
+            <div class="row mb-3 justify-content-between">
+                <h4 class="col-auto">Последние акты НРП:</h4>
+                <div class="col-auto">
+                    <a class="btn btn-primary" href="{% url 'act-create' %}" role="button"><i class="bi bi-plus-lg"></i></a>
+                </div>
+            </div>
+            {% for act in acts %}
+                <div class="row px-3 mb-2">
+                    <div class="col shadow p-4 border border-dark rounded" >
+                        <!-- Заголовок -->
+                        <div class="row justify-content-between">
+                            <div class="col-auto">
+                                <h5>Акт №{{ act.pk }} от {{ act.doc_date|date:"d.m.Y"|lower }}</h5>
+                                <!--Статус-->
+                                <div>
+                                    <h5>{{ act.status|colored_act_status|safe }}</h5>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <a href="{% url 'act-user-update' act.pk %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <!--Продавец-->
+                        {% if act.shop %}
+                        <div class="row">
+                            <strong class="col-sm-4 text-muted">Продавец:</strong>
+                            <div class="col-sm-8">{{ act.shop }}</div>
+                        </div>
+                        {% endif %}
+                        <!--Ппокупатель-->
+                        {% if act.client %}
+                        <div class="row">
+                            <strong class="col-sm-4 text-muted">Клиент:</strong>
+                            <div class="col-sm-8">{{ act.client }}</div>
+                        </div>
+                        {% endif %}
+                        <!--Данные об изделии-->
+                        {% if act.product or act.model_description or act.serial_number %}
+                        <div class="row pb-2">                     
+                            <div class="col-sm-6">{{ act.model_description|default_if_none:"" }}</div>
+                            <div class="col-sm-6">{{ act.serial_number|default_if_none:"" }}</div>
+                        </div>
+                        {% endif %}
+                        <!--Примечание-->
+                        {% if act.note %}
+                        <div class="col-12">
+                            <i class="bi bi-info-square"></i><label class="px-3">{{ act.note }}</label>
+                        </div>
+                        {% endif %}
+                        <!--Сообщение от менеджера -->
+                        {% if act.member_for_user and act.status.status == 'refinement' %}
+                        <div class="col-12">
+                            <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3">{{ act.member_for_user }}</strong>
+                        </div>
+                        {% endif %} 
+                    </div>
+                </div>
+            {% empty%}
+                <label class="col-sm-12 text-center"><h5 class="text-muted">Актов нет ..</h5></label>
+            {% endfor %}
+            {% if acts %}
+                <div class="col-12 text-center mt-5">
+                    <a href="{% url 'act-list' %}" role="button" class="btn btn-outline-primary">Все акты</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+{% include 'inc/footer.html' %}
+
+
+<script>
+    if (!document.createElement('dialog').showModal) {
+        // Браузер нативно не поддерживает элемент dialog
+        text = 'Ваш браузер не поддерживает модальные окна !\nСообщите об этои администратору сайта !'
+        alert(text)
+      
+        import('/dist/dialog-polyfill.js') // Подгружаем polyfill
+          .then(dialogPolyfill =>
+            document.querySelectorAll('modal fade')
+              .forEach(dialogPolyfill.registerDialog) // Применяем его для всех элементов на странице
+            
+          )
+      }
+</script>
+
+{% endblock %}

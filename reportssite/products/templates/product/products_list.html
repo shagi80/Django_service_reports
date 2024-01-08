@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+{% include 'inc/staff_navbar.html' %}
+{% else %}
+{% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container">
+    <main>
+        <div class="row py-4 justify-content-between">
+            <div class="col-11"><h3>{{ title }}</h3></div>
+            <div class="col-1">
+                {% if request.user.is_superuser %}
+                <a class="btn btn-primary" href="/admin/" role="button">Добавить</a>
+                {% endif %}
+            </div>
+        </div>
+        {% if models %}
+        <div class="row п-5">
+            <!-- список продуктов --!>
+            {% show_products_list products %}
+            <!-- вывод моделей --!>
+            <div class="col-lg-9">
+                {% for product in products %}
+                <div class="container mb-3" id="Item-{{ forloop.counter }}">
+                    <diw class="row bg-light justify-content-between">
+                        <div class="col-auto">
+                            <h5>{{ product.title }}</h5>
+                        </div>
+                        <div class="col-auto">
+                            <a data-bs-toggle="collapse" href="#collapse-{{ forloop.counter }}" aria-expanded="false" aria-controls="collapseExample">
+                                <i class="bi bi-arrow-down-up"></i>
+                            </a>
+                        </div>
+                    </diw>
+                    <div class="row collapse show"  id="collapse-{{ forloop.counter }}">
+                        <hr>
+                        {% for model in models %}
+                        <div class="row col-12 px-5 b-white">
+                            {% if model.product == product %}
+                            {{ model.title }}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- кнопка ВВЕРХ --!>
+        {% include 'inc/go_to_top_button.html' %}
+        {% else %}
+        <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+        {% endif %}
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

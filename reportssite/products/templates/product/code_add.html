@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container col-8">
+    <div class="row py-4 col-6">
+        <h3>{{ title }}</h3>
+    </div>
+    <form class="row g-3" method="post" id="codeForm" data-group-url="{% url 'ajax_load_groups' %}" novalidate>
+        {% csrf_token %}
+        <div class="col-lg-6">
+            <label class="form-label">Вид продукции</label>
+            {{ form.product }}
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">Родительская группа</label>
+            {{ form.parent }}
+        </div>
+        <div class="col-lg-12 mt-4">
+            <div class="form-check">
+                {{ form.is_folder }}
+                <label class="form-label">- это группа</label>
+            </div>
+        </div>
+        <div class="col-lg-1">
+            <label class="form-label">Код</label>
+            {{ form.code }}
+        </div>
+        <div class="col-lg-9">
+            <label class="form-label">Описание кода</label>
+            {{ form.title }}
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label">Вид ремонта</label>
+            {{ form.repair_type }}
+        </div>
+        <div class="col-lg-12 mt-4">
+            <div class="form-check">
+                {{ form.is_active }}
+                <label class="form-label">- активен</label>
+            </div>
+        </div>
+        <div class="col-lg-12 text-end">
+            {% if form.instance and form.instance.pk %}
+            <button type="submit" class="btn btn-primary" name="close">Записать и закрыть</button>
+            {% else %}
+            <button type="submit" class="btn btn-outline-secondary" name="close">Записать и закрыть</button>
+            <button type="submit" class="btn btn-primary" name="save">Записать и добавить еще</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы --!>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    $("#id_product").change(function () {
+      var url = $("#codeForm").attr("data-group-url");
+      var productId = $(this).val();
+
+      $.ajax({
+        url: url,
+        data: {
+          'product': productId
+        },
+        success: function (data) {
+          $("#id_parent").html(data);
+        }
+      });
+    });
+ </script>
+
+{% endblock %}

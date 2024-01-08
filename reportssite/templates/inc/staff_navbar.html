@@ -1,0 +1,75 @@
+{% load my_tags %}
+<nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light" aria-label="Fourth navbar example">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><strong>RENOVA</strong></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarsExample04">
+        <ul class="navbar-nav me-auto mb-2 mb-md-0">
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="{% url 'staff_home' %}">Главная</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="{% url 'reports_list' %}">Отчеты</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="{% url 'act-list' %}">Акты НРП</a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropdown04" data-bs-toggle="dropdown" aria-expanded="false">Сервисные центры</a>
+            <ul class="dropdown-menu" aria-labelledby="dropdown04">
+              <li><a class="dropdown-item" href="{% url 'centres_list_page' %}">Сервисные центры</a></li>
+              <li><a class="dropdown-item" href="{% url 'centres_contacts_page' %}">Контакты сервисных центров</a></li>
+              <li><a class="dropdown-item" href="{% url 'centres_region_list_page' %}">Регионы доставки запчастей</a></li>
+              {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'centres_add_page' %}">Добавить сервисый центр</a></li>
+              <li><a class="dropdown-item" href="{% url 'contact_add_page' %}">Добавить контакт</a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropdown05" data-bs-toggle="dropdown" aria-expanded="false">Продукция и коды</a>
+            <ul class="dropdown-menu" aria-labelledby="dropdown04">
+              <li><a class="dropdown-item" href="{% url 'products_list_page' %}">Продукция</a></li>
+              <li><a class="dropdown-item" href="{% url 'code_and_prices_page' %}">Коды неисправностей и все расценки</a></li>
+              {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+              {% show_base_price_links %}
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'code_add_page' %}">Добавить код неисправности</a></li>
+              <li><a class="dropdown-item" href="{% url 'price_add_page' %}">Добавить базовую расцеку</a></li>
+              <li><a class="dropdown-item" href="{% url 'centerprice_add_page'%}">Добавить индивидуальную расцеку</a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropdown06" data-bs-toggle="dropdown" aria-expanded="false">Инструменты</a>
+            <ul class="dropdown-menu" aria-labelledby="dropdown04">
+              <li><a class="dropdown-item" href="{% url 'manager_work_page' %}">Отчет о работе менеджеров</a></li>
+              <li><a class="dropdown-item" href="{% url 'staff-ordered-parts' %}">Заказанные детали</a></li>
+              <li><a class="dropdown-item" href="{% url 'sum-for-payment' %}">Суммы в оплату</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'logs_page' %}">Список изменений данных</a></li>
+              {% if user.is_superuser %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'accept-all' %}">Принять все проверяемое</a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="{% url 'help_page' %}">Помощь</a>
+          </li>
+        </ul>
+        <div>
+            <strong>{{ request.user }}</strong>
+            <a class="btn btn-outline-secondary" href="{% url 'user_logout' %}" role="button">Выход</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+<div class="container-fluid">
+    {% include 'inc/show_message.html' %}
+</div>

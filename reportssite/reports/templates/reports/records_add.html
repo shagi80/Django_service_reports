@@ -1,0 +1,498 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+{% load static %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% if request.user.is_staff %}
+    {% include 'inc/staff_navbar.html' %}
+{% else %}
+    {% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container col-lg-12">
+    
+    <div class="alert alert-warning alert-dismissible fade show text-center" role="alert">
+        <strong>Внимание !</strong> 
+        <div>Поле "Дата окончания ремонта" больше не являтся обязательным при заказе запчастей.</div>
+        <div>Заполняйте это поле только по факту окончания ремонта и вы сможете отслеживать статус каждого ремонта отдельно.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="row pt-3 justify-content-between">
+        <div class="col-auto">
+            <h3 class="mb-0">
+                {{ title }}
+                {% if request.user.is_staff %}
+                <label class="text-primary">{{ report.service_center }}</label>
+                {% endif %}
+                <label class="text-primary"> за {{ report.report_date|date:"F Y"|lower }}</label>
+            </h3>
+            {{ record.status|colored_record_status|safe }}
+            {% if record.pk %}
+                <div style="font-size:0.8rem" class="text-muted">Номер записи: {{ record.pk }}</div>
+            {% endif %}
+        </div>
+        <div class="col-auto pt-2">
+            {% if record.pk %}
+            <a href="{% url 'report_page' report.pk %}#record-{{record.pk}}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i>  Закрыть</a>
+            {% else %}
+            <a href="{% url 'report_page' report.pk %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i>  Закрыть</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if record.errors %}
+        <div class="row mt-2">
+            <div class="col-12">
+                <i class="bi bi-exclamation-square-fill text-warning"></i><strong class="px-3">{{ record.errors }}</strong>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if record.remarks %}
+        {% if request.user.is_staff %}
+        <div class="row mt-1">
+            <div class="col-12">
+                <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3 text-danger">{{ record.remarks }}</strong>
+            </div>
+        </div>
+        {% elif report.status == 'refinement' %}
+        <div class="row mt-1">
+             <div class="col-12">
+                 <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3 text-danger">{{ record.remarks }}</strong>
+             </div>
+        </div>
+        {% endif %}
+    {% endif %}
+
+    {% if record.errors or record.remarks %}
+        <hr class="mb-5">
+    {% endif %}
+
+
+
+    <form method="post" id="recordForm" data-codes-url="{% url 'ajax_load_codes' %}" data-models-url="{% url 'ajax_load_models' %}" data-work-price-url="{% url 'ajax_load_work-price' %}" novalidate>
+        {% csrf_token %}
+
+        {% if form.order_parts.value %}
+            <div hidden>form.as_p</div>
+        {% endif %}
+
+        {{ form.report }}
+        <div hidden>{{ form.remarks }}</div>
+
+        <!-- Окно некритичных ошибок -->
+        {% if form.errors.errors %}
+        <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="false">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title  text-danger" id="warningModalLabel"><strong>Внимание !</strong></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul>
+                            {% for error in form.errors.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div id="modalButtons" class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        <button type="submit" class="btn btn-primary" name="save_with_warning">Записать как есть</button>
+                    </div>
+                    <div id="modalButtonsSpin" class="modal-footer justify-content-center" style="display:none;">
+                        <div class="spinner-border" role="status">
+                        </div>
+                        <strong class="text-danger">пожалуйста, подождите ...</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row mt-3">
+            <!-- Вид ремонта -->
+            <div class="col-md-3">
+                <label class="form-label"><strong>Вид ремонта:</strong>
+                    {% if form.work_type.errors %}
+                    {% show_record_form_field_errors form.work_type.errors %}
+                    {% endif %}
+                </label>
+                {{ form.work_type }}
+            </div>
+             <!-- Продукция -->
+            <div class="col-md-3">
+                <label class="form-label" style="strong: true"><strong>Вид продукции:</strong>
+                    {% if form.product.errors %}
+                    {% show_record_form_field_errors form.product.errors %}
+                    {% endif %}
+                </label>
+                {{ form.product }}
+            </div>
+             <!-- Модель -->
+            <div class="col-md-3">
+                <label class="form-label"><strong>Модель продукции:</strong>
+                    {% if form.model_description.errors %}
+                    {% show_record_form_field_errors form.model_description.errors %}
+                    {% endif %}
+                </label>
+                {{ form.model }}
+                {{ form.model_description }}
+            </div>
+             <!-- Серийный номер -->
+            <div class="col-md-3">
+                <label class="form-label"><strong>Серийный номер</strong>
+                    {% if form.serial_number.errors %}
+                    {% show_record_form_field_errors form.serial_number.errors %}
+                    {% endif %}
+                </label>
+                {{ form.serial_number }}
+            </div>
+        </div>
+        
+        <div class="row mt-2">
+            <div class="col-lg-8">
+                <!--Информация о клиенте и даты-->
+                <div class="row g-3">
+                    <!-- Клиент -->
+                    <div class="col-md-6">
+                        <label class="col-sm-12 col-form-label" style="strong: true"><strong>Клиент:</strong>
+                        </label>
+                        <div class="row mb-1">
+                            <label class="col-sm-3 text-muted">тип
+                                {% if form.client_type.errors %}
+                                {% show_record_form_field_errors form.client_type.errors %}
+                                {% endif %}
+                            </label>
+                            <div class="col-sm-9">{{ form.client_type }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-3 text-muted">
+                                ФИО
+                                {% if form.client.errors %}
+                                {% show_record_form_field_errors form.client.errors %}
+                                {% endif %}
+                            </label>
+                            <div class="col-sm-9">{{ form.client }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-3 text-muted">
+                                телефон
+                                {% if form.client_phone.errors %}
+                                {% show_record_form_field_errors form.client_phone.errors %}
+                                {% endif %}
+                            </label>
+                            <div class="col-sm-9">{{ form.client_phone }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-3 text-muted">
+                                адрес
+                                {% if form.client_addr.errors %}
+                                {% show_record_form_field_errors form.client_addr.errors %}
+                                {% endif %}
+                            </label>
+                            <div class="col-sm-9">{{ form.client_addr }}</div>
+                        </div>
+                        <div id="client_email_div" class="row my-1" hidden>
+                            <label class="col-sm-3 text-muted">
+                                e-mail
+                                {% if form.client_email.errors %}
+                                {% show_record_form_field_errors form.client_email.errors %}
+                                {% endif %}
+                            </label>
+                            <div class="col-sm-9">{{ form.client_email }}</div>
+                        </div>
+                    </div>
+                    <!-- Даты -->
+                    <div class="col-md-5">
+                        <label class="col-sm-12 col-form-label" style="strong: true"><strong>Даты:</strong></label>
+                        <div class="row mb-1">
+                            <label class="col-sm-7 text-muted">
+                                покупки
+                                {% if form.buy_date.errors %}
+                                {% show_record_form_field_errors form.buy_date.errors %}
+                                {% endif %}
+                            </label>
+                            <div class="col-sm-5">{{ form.buy_date }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-7 text-muted">
+                                начала ремонта
+                                {% if form.start_date.errors %}
+                                {% show_record_form_field_errors form.start_date.errors %}
+                                {% endif %}
+                            </label>
+                            <div class="col-sm-5">{{ form.start_date }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-7 text-muted">
+                                окончания ремонта
+                                {% if form.end_date.errors %}
+                                {% show_record_form_field_errors form.end_date.errors %}
+                                {% endif %}
+                            </label>
+                            <div class="col-sm-5">{{ form.end_date }}</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Неисправность -->
+                <div class="row g-1">
+                    <label class="col-sm-12 col-form-label" style="strong: true"><strong>Неисправность:</strong>
+                        {% if form.code.errors %}
+                        {% show_record_form_field_errors form.code.errors %}
+                        {% elif form.problem_description.errors %}
+                        {% show_record_form_field_errors form.problem_description.errors %}
+                        {% endif %}
+                    </label>
+                    <div class="col-md-2">
+                        <label class="col-sm-12 text-muted" style="strong: true">описание</label>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.problem_description }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="col-sm-12 text-muted" style="strong: true">код</label>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.code }}
+                    </div>
+                </div>
+                <!-- Работы -->
+                <div class="row g-1">
+                    <label class="col-sm-12 col-form-label" style="strong: true"><strong>Выполенные работы:</strong>
+                        {% if form.work_description.errors %}
+                        {% show_record_form_field_errors form.work_description.errors %}
+                        {% endif %}
+                    </label>
+                    <div class="col-md-11">
+                        {{ form.work_description }}
+                    </div>
+                </div>
+                <!-- Затраты -->
+                <div class="row g-1">
+                    <label class="col-lg-12 col-form-label" style="strong: true"><strong>Затраты:</strong>
+                        {% if form.work_cost.errors %}
+                        {% show_record_form_field_errors form.work_cost.errors %}
+                        {% endif %}
+                    </label>
+                    <label class="col-lg-2 text-muted" style="strong: true">за работы</label>
+                    <div class="col-lg-2">
+                        {{ form.work_cost }}
+                    </div>
+                    <div class="col-lg-3"></div>
+                    <label class="col-lg-2 text-muted" style="strong: true">за детали</label>
+                    <div class="col-lg-2">
+                        <input type="text" class="form-control form-control-sm" id="parts_cost" value="0" disabled>
+                        {{ form.parts_cost }}
+                    </div>
+                    <label class="col-lg-2 text-muted" style="strong: true">за выезд</label>
+                    <div class="col-lg-2">
+                        {{ form.move_cost }}
+                    </div>
+                    <div class="col-lg-3"></div>
+                    <label class="col-lg-2 text-muted" style="strong: true">всего</label>
+                    <div class="col-lg-2">
+                        <input type="text" class="form-control form-control-sm" id="total_cost" value="0,0" disabled>
+                        {{ form.total_cost }}
+                    </div>
+                </div>
+                <!-- Примечание -->
+                <div class="row g-1">
+                    <label class="col-lg-11 col-form-label" style="strong: true"><strong>Примечание:</strong></label>
+                    <div class="col-md-11">
+                        {{ form.note }}
+                    </div>
+                </div>
+            </div>
+
+            <!--Детали -->
+            <div class="col-lg-4" id="parts_container">
+                <div class="row">
+                    <label class="col-sm-6 col-form-label" style="strong: true"><strong>Детали:</strong>
+                    {% if form.parts_cost.errors %}
+                    {% show_record_form_field_errors form.parts_cost.errors %}
+                    {% endif %}
+                    </label>
+                    <div class="col-md-6 align-self-end text-end">
+                        {% if record.report.status == 'draft' or record.report.status == 'refinement' or not request.user.is_staff %}
+                        <button type="button" id="AddPart" class="btn btn-outline-secondary btn-sm"><i class="bi bi-plus-lg"></i></button>
+                        {% endif %}
+                    </div>
+                </div>               
+                {{ parts_formset.management_form }}
+                {% for part in parts_formset %}
+                {{ part.id }}
+                <div class="parts_form">
+                    <div class="row g-1 py-3">                                            
+                        {% if part.order_date.value and not request.user.is_superuser %}
+                            <div hidden> {{ part.as_p }} </div>
+                            <div class="col-sm-1"><i class="bi bi-envelope-check-fill"></i></div><div class="col-sm-11">{{ part.title.value }}</div>
+                            <div class="col-sm-2">Кол:</div><div class="col-sm-1">{{ part.count.value }}</div>
+                            <div class="col-sm-3">Заказана:</div><div class="col-auto">{{ part.order_date.value }}</div>
+                        {% else %}
+                            <div class="col-sm-2">Деталь:</div><div class="col-sm-10">{{ part.title }}</div>
+                            <div class="col-sm-2">Кол:</div><div class="col-sm-4">{{ part.count }}</div>
+                            <div class="col-sm-2">Цена:</div><div class="col-sm-4">{{ part.price }}</div>
+                            <div class="col-sm-2">Док-т:</div><div class="col-sm-10">{{ part.document }}</div>
+                            {% if request.user.is_superuser %}
+                                <div class="col-sm-4">Дата заказа:</div><div class="col-sm-10">{{ part.order_date }}</div>
+                            {% endif %}
+                            <div class="col-sm-6"><strong>Заказать при записи</strong></div><div class="col-sm-2 part_flag">{{ part.ORDERED}}</div>
+                            <div class="col-sm-6">Удалить при записи</div><div class="col-sm-2" >{{ part.DELETE }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Кнопки записи и закрытия -->
+        <div class="row mt-5 justify-content-between">
+            <div class="col-auto">
+                {% if can_edit and not form.order_parts.value %}
+                    {% if form.instance and form.instance.pk %}
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delete">Удалить</button>
+                    <!-- Окно подтверждения удаления записи -->
+                    <div class="modal fade" id="delete" tabindex="-1" aria-labelledby="deleteLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteLabel">Вы уверенны, что хотите удалить эту запись ?</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-footer text-center">
+                                    <a href="{% url 'record_delete' form.instance.pk %}" class="btn btn-danger btn-sm" tabindex="-1" role="button" aria-disabled="true">Удалить</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="col-auto  d-flex flex-wrap justify-content-center gap-2">
+                {% if can_edit %}
+                <div id='buttons'>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        {% if form.instance and form.instance.pk %}
+                        <button type="submit" class="btn btn-primary subbtn" name="continue"><i class="bi bi-save part_flag"></i>  Записать и продолжить</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary subbtn" name="continue"><i class="bi bi-save part_flag"></i>  Записать и добавить еще</button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-outline-primary subbtn" name="close"><i class="bi bi-save part_flag"></i>  Записать и закрыть</button>
+                    </div>
+                </div>
+                <div id='buttons_disabled' style="display:none">
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        {% if form.instance and form.instance.pk %}
+                        <button class="btn btn-primary" disabled>
+                            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                            Записать и продолжить
+                        </button>
+                        {% else %}
+                        <button class="btn btn-primary" disabled>
+                            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                            Записать и добавить еще
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-outline-primary" disabled>
+                            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                            Записать и закрыть
+                        </button>
+                    </div> 
+                </div>
+                {% endif %}
+                <div>
+                    <a href="{% url 'report_page' report.pk %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i>  Закрыть</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% if record %}
+        <hr class="mt-5">
+        <div class='row mt-5'>
+            <h6 class="col-auto">Документы:</h6>                            
+            <div class="col-auto">
+                {% if record.recorddocumnent_set.all %}
+                    {% for doc in record.recorddocumnent_set.all %}
+                        <div class="row">
+                            <div class="col-auto"><a href='{{ doc.file.url }}' class='text-decoration-none' target="_blank">{{ doc.title }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}</a></div>                        
+                            <!--Кнопка удаления документво-->
+                            {% if record.report.status != 'payment' and  record.report.status != 'accepted' and request.user == record.report.service_center.user %}
+                                <form class="col text-end" method="POST" action="{% url 'record-document-delete' record.pk %}">                                         
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link text-danger p-0" style="font-size:0.8rem" name="document" value="{{ doc.pk }}">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}               
+                    <span class="text-danger"><i class="bi bi-envelope"></i> нет документов</span>
+                {% endif %}
+            </div>                
+            <div class="col">
+                {% if record.report.status != 'payment' and  record.report.status != 'accepted' and request.user == record.report.service_center.user %}
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#addDocument_{{ form.instance.pk }}">
+                        Добавить документ
+                    </button>
+                {% endif %}
+                <!-- Окно загрузки документа -->
+                <div class="modal fade" id="addDocument_{{ record.pk }}" tabindex="-1" aria-labelledby="addDocumentLabel_{{ record.pk }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addDocumentLabel_{{ record.pk }}">Добавление документа</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form id="document_form" method="POST" action="{% url 'record-document-upload' record.pk %}" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                {{ document_form.record }}
+                                <div class="modal-body">
+                                    <div class="row g-2 text-start">
+                                        <div class="col-md-4">Документ:</div>
+                                        <div class="col-md-8">{{ document_form.title }}</div>
+                                        <div class="col-md-4">Номер:</div>
+                                        <div class="col-md-2">{{ document_form.number }}</div>
+                                        <div class="col-md-2 text-end">Дата:</div>
+                                        <div class="col-md-4">{{ document_form.date }}</div>
+                                        <div class="col-md-2">Файл:</div>
+                                        <div class="col-md-10">{{ document_form.file }}</div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <div id='buttons'>
+                                        <button type="submit" class="btn btn-primary btn-sm">Добавить</button>
+                                    </div>
+                                    <div id='buttons_disabled' style="display:none">
+                                        <button class="btn btn-primary btn-sm" disabled>
+                                            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                                            Добавить
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+
+
+<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="{% static 'reports/scripts/recordAddScript.js' %}"> </script>
+
+{% endblock %}

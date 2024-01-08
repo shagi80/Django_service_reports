@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|Главная
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container">
+    <main>
+        
+        <!--заголоовок отчета-->
+        <div class="row mt-5 mb-3 justify-content-between">
+            <h3 class="col-auto">{{ title }}</h3>
+            <h4 class="col-auto mb-3">
+                <span class="col-auto badge bg-primary rounded-pill ml-2">{{ obj_count }} ремонта</span>
+            </h4>
+        </div>
+        
+        <!-- форма фильтра-->
+        <div class="card card-body mb-3">
+            <form class="row justify-content-between" method="get">
+                <div class="col-auto">
+                    <div class="row row-cols-lg-auto g-3 align-items-center">                        
+                        <div class="col-12">
+                           <div class="input-group">
+                                <div class="input-group-text">Менеджер</div>
+                                {{ form.manager }}
+                            </div>
+                        </div>                        
+                        <div class="col-12">
+                            <div class="input-group">
+                                <div class="input-group-text">Период</div>
+                                {{ form.start_date}}
+                                {{ form.end_date}}
+                            </div>
+                        </div>                    
+                        <div class="col-12">
+                            <div class="form-check">
+                            {{ form.errors_only }}
+                            <label class="form-check-label" for="inlineFormCheck">
+                                только с ошибками
+                            </label>
+                            </div>
+                        </div>                   
+                    </div>
+                </div>
+                <div class="col-auto mt-2 mt-xl-0">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                        выбрать
+                    </button>
+                    <a class="btn btn-outline-primary" href="{% url 'manager_work_page' %}" role="button">
+                        <i class="bi bi-x-lg"></i>
+                        сбросить
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!--вывод записей-->
+        {% if records %}
+        {% for record in records %}
+            <!--постоянно отображаемый заголовок-->
+            <div class="row p-2 mx-2 mb-2 bg-light border">
+                    <div class="row justify-content-between">
+                        <h5 class="col-auto">{{ record.report }}</h5>
+                        <button class="btn btn-outline-secondary col-auto" type="button" data-bs-toggle="collapse" data-bs-target="#record-{{ record.pk }}" aria-expanded="false" aria-controls="collapseExample">
+                            <i class="bi bi-eye"></i>
+                        </button>                     
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-2">
+                            {% if record.verified %}
+                            <i class="bi bi-check-square-fill text-success"></i>
+                            {% else %}
+                            <i class="bi bi-square text-danger"></i>
+                            {% endif %}
+                            <span class="m-1">{{ record.get_work_type_display }}</span>
+                        </div>
+                        <div class="col-lg-5">{{ record.product }}</strong></div>
+                        <div class="col-lg-3">{{ record.model_description }}</strong></div>
+                        <div class="col-lg-2">{{ record.serial_number }}</strong></div>
+                    </div>
+                    {% if record.errors %}
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <i class="bi bi-exclamation-square-fill text-warning"></i></i><strong class="px-3">{{ record.errors }}</strong>
+                        </div>
+                    </div>
+                    {% endif %}
+            </div>
+            <!--сворачиваемое содержимое-->
+            <div class="collapse row p-2 border mx-2 mb-2" id="record-{{ record.pk }}">
+                <div class="row mb-1">
+                    <div class="col-xl-8">
+                        <div class="row">
+                            {% if record.client %}
+                            <div class="col-xl-4">{{ record.client }} ({{ record.client_phone }})</div>
+                            {% endif %}
+                            <div class="col-xl-8">
+                                <div class="col-xl-12"><label class="text-muted">Неисправность:</label> {{ record.problem_description|truncatewords:8 }}</div>
+                                <div class="col-xl-12"><label class="text-muted">Код:</label> {{ record.code|truncatewords:8 }}</div>
+                                <div class="col-xl-12"><label class="text-muted">Работы:</label> {{ record.work_description|truncatewords:8 }}</div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-xl-3">За работы: {{ record.work_cost }}</div>
+                            <div class="col-xl-3">За выезд: {{ record.move_cost }}</div>
+                            <div class="col-xl-3">За детали: {{ record.parts_cost }}</div>
+                            <div class="col-xl-3"><strong>Итого: {{ record.total_cost }}</strong></div>
+                        </div>
+                        {% if record.note %}
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <i class="bi bi-info-square"></i><label class="px-3">{{ record.note }}</label>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-xl-4">
+                        {% show_record_parts_list record %}
+                    </div>
+                </div>
+                {% if record.remarks %}
+                    {% if request.user.is_staff %}
+                    <div class="row mt-1">
+                        <div class="col-12">
+                            <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3 text-danger">{{ record.remarks }}</strong>
+                        </div>
+                    </div>
+                    {% elif report.status == 'refinement' %}
+                    <div class="row mt-1">
+                        <div class="col-12">
+                            <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3 text-danger">{{ record.remarks }}</strong>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endfor %}
+        {% else %}
+        <h4 class="text-center text-muted mt-5">Ничего не найдено ...</h4>
+        {% endif %}        
+
+        {% if records %}
+        <!-- кнопка ВВЕРХ! -->
+        {% include 'inc/go_to_top_button.html' %}
+        {% endif %}
+
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

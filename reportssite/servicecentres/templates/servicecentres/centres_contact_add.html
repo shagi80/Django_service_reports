@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container col-6">
+    <div class="row py-4 col-6">
+        <h3>{{ title }}</h3>
+    </div>
+    <form class="row g-3" method="post">
+        {% csrf_token %}
+        <div class="col-lg-6">
+            <label class="form-label">Сервисный центр</label>
+            {{ form.service_center }}
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">ФИО</label>
+            {{ form.name }}
+        </div>
+        <div class="col-lg-12">
+            <label class="form-label">Должность</label>
+            {{ form.tel_num }}
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">Телефон</label>
+            {{ form.tel_num }}
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">E-mail</label>
+            {{ form.email }}
+        </div>
+        <div class="col-lg-12">
+            <label class="form-label">Дополнительно</label>
+            {{ form.note }}
+        </div>
+        <div class="row mt-4">
+            <div class="col-lg-2">
+                {% if form.instance and form.instance.pk %}
+                <a class="btn btn-outline-danger" href="{% url 'contact_delete_page' form.instance.pk %}" role="button">Удалить</a>
+                {% endif %}
+            </div>
+            <div class="col-lg-10 text-end">
+                {% if center_id %}
+                <button type="submit" class="btn btn-primary" name="close">Записать и закрыть</button>
+                {% else %}
+                <button type="submit" class="btn btn-outline-secondary" name="close">Записать и закрыть</button>
+                <button type="submit" class="btn btn-primary" name="save">Записать и добавить еще</button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+
+{% include 'inc/footer.html' %}
+{% endblock %}

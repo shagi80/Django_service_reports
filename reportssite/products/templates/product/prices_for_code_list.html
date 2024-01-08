@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container col-lg-10">
+    <div class="row py-4 col-12">
+        <div class="col-lg-10">
+            <h3>{{ title }}</h3>
+            {% if code.product %}
+            <h4 class="text-muted">{{ code.product }}</h4>
+            {% else %}
+            <h4 class="text-muted">Для всех типов продукции</h4>
+            {% endif %}
+            <h4 class="text-muted">{{ code }}</h4>
+        </div>
+        <div class="col-lg-2">
+            <a class="btn btn-outline-secondary" href="{% url 'code_and_prices_page' %}" role="button">Вернуться к списку</a>
+        </div>
+    </div>
+    <div class="container py-4 col-10">
+        <div class="row mb-3 bg-light">
+            <div class="col-lg-9">
+                {% if base_prices %}
+                <h4>Базовые расценки:</h4>
+                {% else %}
+                <h4>Базовых расценок не установленно</h4>
+                {% endif %}
+            </div>
+            <div class="col-lg-3 text-end">
+                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                <a class="btn btn-outline-primary" href="{% url 'price_add_page' code.pk %}?next={{ request.path }}" role="button">Добавить</a>
+                {% endif %}
+            </div>
+        </div>
+        {% if base_prices %}
+            {% for price in base_prices %}
+            <div class="row px-5 m-1">
+                <div class="col-lg-6">
+                    <a href="{% url 'price_update_page' price.pk  %}?next={{ request.path }}" style="text-decoration: none">
+                        <h5>Прайс "{{ price.get_price_type_display }}", {{ price.get_repair_type_display }} ремонт </h5>
+                    </a>
+                </div>
+                <div class="col-lg-6">
+                    <h5>{{ price.price }} руб</h5>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+        <div class="row my-3 bg-light">
+            <div class="col-lg-9">
+                {% if prices %}
+                <h4>Индивидуальные расценки:</h4>
+                {% else %}
+                <h4>Индивидуальных расценок не установленно</h4>
+                {% endif %}
+            </div>
+            <div class="col-lg-3 text-end">
+                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                <a class="btn btn-outline-primary" href="{% url 'centerprice_add_page' code.pk %}?next={{ request.path }}" role="button">Добавить</a>
+                {% endif %}
+            </div>
+        </div>
+        {% if prices %}
+            {% for price in prices %}
+            <div class="row px-5 m-1">
+                <div class="col-lg-6">
+                    <a href="{% url 'centerprice_update_page' price.pk %}?next={{ request.path }}" style="text-decoration: none">
+                        <h5>{{ price.service_center }}</h5>
+                    </a>
+                </div>
+                <div class="col-lg-6">
+                    <h5>{{ price.price }} руб</h5>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+        <!-- кнопка ВВЕРХ -->
+        {% include 'inc/go_to_top_button.html' %}
+    </div>
+
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+{% endblock %}

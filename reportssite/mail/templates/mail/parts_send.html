@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RENOVA.Parts order</title>
+</head>
+<body>
+    <div style="margin-left: auto; margin-right: auto; width: 80%">
+        <h3 style="color: blue;">Вам отправлены запчасти</h3>
+        <hr>
+        <div>
+            <ul style="margin: 0px;">
+                {% for part in parts %}
+                    <li style="margin: 0px; color: red;">
+                        {{ part.title }} ({{ part.count }} шт). Отправлена {{part.send_date}} № {{part.send_number}}.
+                    </li>                                                               
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

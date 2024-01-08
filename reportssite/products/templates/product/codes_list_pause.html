@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+{% include 'inc/staff_navbar.html' %}
+{% else %}
+{% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container col-lg-5">
+
+    <form class="row py-5" method="post">
+        {% csrf_token %}
+        <div class="col-lg-12 py-5  text-center">
+        <h3 class="text-muted">ПОДГОТАВЛИВАЕМ ДАННЫЕ, ПОЖАЛУЙСТА ЖДИТЕ</h3>
+        </div>
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+        <input type="submit" id="btn1" onclick="clickButton()" style="display:none;" name="butt_1" value="Show Stats">
+    </form>
+
+    <!---
+    скрипт нажимает на невидимую кнопуку через время задержки
+    за это время основная страница должна загрузится
+    ---!>
+    <script type="text/javascript">
+
+    // Simulate click function
+    function clickButton() {
+        document.querySelector('#btn1').click();
+    }
+    // Timeout
+    setTimeout(clickButton, 1000);
+</script>
+
+</div>
+
+{% endblock %}
+
+
+

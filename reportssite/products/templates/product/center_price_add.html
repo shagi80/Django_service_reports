@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container col-lg-7">
+    <div class="row py-4 col-12">
+        <h3>{{ title }}</h3>
+    </div>
+    <div class="container col-lg-12">
+        <form class="row  g-3" method="post" id="priceForm" data-group-url="{% url 'ajax_load_groups' %}" novalidate>
+        {% csrf_token %}
+            <div class="col-lg-12">
+                <label class="col-sm-4 col-form-label">Сервисный центр
+                    {% if form.service_center.errors %}
+                    {% show_record_form_field_errors form.service_center.errors %}
+                    {% endif %}
+                </label>
+                {{ form.service_center }}
+            </div>
+            <div class="col-lg-6">
+                <label class="col-sm-4 col-form-label">Продукция
+                    {% if form.product.errors %}
+                    {% show_record_form_field_errors form.product.errors %}
+                    {% endif %}
+                </label>
+                {{ form.product }}
+            </div>
+            <div class="col-lg-6">
+                <label class="col-sm-4 col-form-label">Группа кодов
+                    {% if form.group.errors %}
+                    {% show_record_form_field_errors form.group.errors %}
+                    {% endif %}
+                </label>
+                {{ form.group }}
+            </div>
+            <div class="col-lg-12">
+                <label class="col-sm-4 col-form-label">Код
+                    {% if form.code.errors %}
+                    {% show_record_form_field_errors form.code.errors %}
+                    {% endif %}
+                </label>
+                {{ form.code }}
+            </div>
+            <div class="col-lg-3">
+                <label class="col-sm-4 col-form-label">Расценка
+                    {% if form.price.errors %}
+                    {% show_record_form_field_errors form.price.errors %}
+                    {% endif %}
+                </label>
+                {{ form.price }}
+            </div>
+        <div class="row mt-5 justify-content-between">
+            <div class="col-lg-1">
+                {% if form.instance and form.instance.pk %}
+                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                <a class="btn btn-outline-danger" href="{% url 'centerprice_delete_page' form.instance.pk %}?next={{next}}" role="button">Удалить</a>
+                {% endif %}
+                {% endif %}
+            </div>
+            <div class="col-lg-11 text-end">
+                {% if form.instance and form.instance.pk %}
+                <button type="submit" class="btn btn-primary" name="close">Записать и закрыть</button>
+                {% else %}
+                <button type="submit" class="btn btn-outline-secondary" name="close">Записать и закрыть</button>
+                <button type="submit" class="btn btn-primary" name="save">Записать и добавить еще</button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+    </div>
+</div>
+
+{% include 'inc/footer.html' %}
+
+<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы --!>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    $("#id_product").change(function () {
+      var url = $("#priceForm").attr("data-group-url");
+      var productId = $(this).val();
+
+      $.ajax({
+        url: url,
+        data: {
+          'product': productId
+        },
+        success: function (data) {
+          $("#id_group").html(data);
+          $("#id_code").html('<option value="">---------</option>');
+        }
+      });
+    });
+
+    $("#id_group").change(function () {
+      var url = $("#priceForm").attr("data-group-url");
+      var groupId = $(this).val();
+
+      $.ajax({
+        url: url,
+        data: {
+          'group': groupId
+        },
+        success: function (data) {
+          $("#id_code").html(data);
+        }
+      });
+    });
+ </script>
+
+{% endblock %}

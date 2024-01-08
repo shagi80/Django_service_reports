@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RENOVA.Parts order</title>
+</head>
+<body>
+    <div style="margin-left: auto; margin-right: auto; width: 80%">
+        <h3 style="color: blue;">Новый заказ на запчасти от {{ record.report.service_center }} ({{ record.report.service_center.city }})</h3>
+        {% if record.report.service_center.user.email %}
+            Почта:  <a href="mailto:{{ report.service_center.user.email }}">{{ record.report.service_center.user.email }}</a>
+        {% endif %}
+        {% if record.report.service_center.servicecontacts_set.all.first %}
+        <div>
+            Контакт:  
+            <a href="tel:{{ contact.tel_num }}">{{ record.report.service_center.servicecontacts_set.all.first.tel_num }}</a>
+            ({{ record.report.service_center.servicecontacts_set.all.first.name }})
+        </div>
+        {% endif %}
+        <hr>
+
+        <div>
+            <p style="margin-bottom: 0px;">
+                <strong>{{ record.product }} {{ record.model_description }} SN:{{ record.serial_number }}</strong>
+            </p>
+            <p>
+                <strong>Клиент:  </strong>
+                {% if record.client %}
+                    {{ record.client }} ({{ record.client_phone }})
+                {% else %}
+                    предторговый ремонт
+                {% endif %}
+            </p>
+            <p><strong>Неисправность:  </strong>{{ record.problem_description }}</p>
+            <p><strong>Код:  </strong>{{ record.code }}</p>
+            <p>
+                {% if record.buy_date %}
+                    <strong>Дата продажи:  </strong>{{ record.buy_date }}<br>
+                {% endif %}
+                <strong>Дата начала ремонта:  </strong>{{ record.start_date }}
+            </p>
+            <p style="margin: 0px;"><strong>Заказанные детали: </strong></p>
+            <ul style="margin: 0px;">
+                {% for part in parts %}
+                    <li style="margin: 0px; color: red;">
+                        {{ part.title }} - {{ part.count }} шт
+                    </li>                                                               
+                {% endfor %}
+            </ul>
+            {% if record.note %}
+            <p>
+                <strong> Примечание: </strong>
+                <span style="color: red;">{{ record.note }}</span>
+            </p>
+            {% endif %}
+            <p>
+                <strong> Почтовый адрес: </strong>
+                <span style="color: red;">{{ record.report.service_center.post_addr }}</span>
+            </p>
+            {% if record.recorddocumnent_set.all %}
+                <p class="mt-3 mb-0"><strong>Приложенные файлы: </strong></p>
+                <ul class="my-0 py-0">
+                    {% for doc in record.recorddocumnent_set.all %}
+                        <li>
+                        <a href='https://www.renova-service.ru/{{ doc.file.url }}' class='text-decoration-none' target="_blank">{{ doc.title }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-murder my-3">Файлы не приложены ...</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

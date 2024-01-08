@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% if request.user.is_staff %}
+{% include 'inc/staff_navbar.html' %}
+{% endif %}
+
+<div class="container">
+    <main>
+    {% for code in codes %}
+        <p>{{ code.slug }} | {{ code.repair_type }} | {{ code.product }} | {{ code }}</p>
+
+    {% endfor %}
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

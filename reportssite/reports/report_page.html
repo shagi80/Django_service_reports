@@ -1,0 +1,560 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+{% load static %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}{{ report.report_date|date:"F Y"|lower }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+    {% include 'inc/staff_navbar.html' %}
+{% else %}
+    {% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container">
+    <!-- ЗАГОЛОВОК ОТЧЕТА -->
+    <div class="row pt-2">
+
+        <div class="card text-dark bg-light" >
+            <div class="card-body ">
+
+                <!-- Заголовок -->
+                <div class="row justify-content-between mb-3 p-2 border border-dark">
+                    <!-- Заголовок -->
+                    <div class="col-auto">
+                        <h5>
+                            {% if request.user.is_staff %}
+                                {{ report.service_center }} за {{ report.report_date|date:"F Y"|lower}}
+                            {% else %}
+                                {{ report.report_date|date:"F Y" }}
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <!-- Статус отчета -->
+                    <div class="col-auto">
+                        {% if report.status == 'draft' %}
+                        <h5 class="text-muted">{{ report.get_status_display }}</h5>
+                        {% elif report.status == 'refinement' %}
+                        <h5 class="text-danger">{{ report.get_status_display }}</h5>
+                        {% elif report.status == 'send' or report.status == 'send_again' or report.status == 'received' %}
+                        <h5 class="text-warning">
+                            {{ report.get_status_display }}
+                            {% if report.send_date and report.status != 'received' %}
+                                {{ report.send_date|date:" d.m.y" }}
+                            {% endif %}
+                        </h5>
+                        {% elif report.status == 'verified' or report.status == 'accepted' %}
+                        <h5 class="text-info">{{ report.get_status_display }}</h5>
+                        {% else %}
+                        <h5 class="text-success">{{ report.get_status_display }}</h5>
+                        {% endif %}
+                    </div>
+                    <!-- Кнопки -->
+                    <div class="col-12 col-lg-auto text-center text-lg-end"> 
+                        {% if request.user.is_staff %}
+                            <!-- Кнопки менеджера -->
+                            <div class="col-auto d-flex gap-1">
+                                {% if not report.status == 'payment' and not report.status == 'refinement' and not report.status == 'received' %}
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#statusModal_{{ report.pk }}">
+                                    {% if report.status == 'draft' %}
+                                    На проверку
+                                    {% elif report.status == 'send' or report.status == 'send_again' %}
+                                    Начать проверку
+                                    {% elif report.status == 'verified' %}
+                                    Принять отчет
+                                    {% elif report.status == 'accepted' %}
+                                    В оплату
+                                    {% endif %}
+                                </button>
+                                {% endif %}                               
+                                {% if report.status == 'received' or report.status == 'verified' %}
+                                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#refinementModal_{{ report.pk }}">
+                                        На доработку
+                                    </button>
+                                {% endif %} 
+                                {% if previos_url %}                             
+                                    <a href="{{ previos_url }}#report-{{ report.pk }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-x-lg"></i>
+                                    </a> 
+                                {% else %}
+                                    <a href="{% url 'reports_list' %}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-x-lg"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- окно подтверждения изменения статуса отчета -->
+                            <div class="modal fade" id="statusModal_{{ report.pk }}" tabindex="-1" aria-labelledby="statusModalLabel_{{ report.pk }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="statusModalLabel_{{ report.pk }}">Изменить статус отчета ?</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            {{ report.service_center }} за {{ report.report_date|date:"F Y"|lower}}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <form method="POST" action="{% url 'report-change-status' %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-primary btn-sm" name="{{ report.status }}" value="{{ report.pk }}">Выполнить</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- окно отправки сообщения пользователю -->
+                            <div class="modal fade" id="refinementModal_{{ report.pk }}" tabindex="-1" aria-labelledby="refinementModalLabel_{{ report.pk }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <form method="POST" action="{% url 'report-change-status' %}">
+                                        {% csrf_token %}
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title text-danger" id="refinementModalLabel_{{ report.pk }}">Отправить отчет на доработку ?</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+                                                {{ report.service_center }} за {{ report.report_date|date:"F Y"|lower}}
+                                                <label class="mt-2 fw-bold">Сообщение пользователю:</label>
+                                                <textarea class="form-control" rows=4 name="message"></textarea>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-primary btn-sm" name="send_refinement" value="{{ report.pk }}">Выполнить</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>                
+                            </div>
+
+                        {%  else %}      
+                            <!-- Кнопки пользователя -->                    
+                            {% if report.status == 'draft' or report.status == 'refinement' %}
+                                <button type="button" class="btn btn-outline-secondary btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#addModal_{{ report.pk }}">
+                                    <i class="bi bi-pencil"></i><span class="m-1">Изменить</span>
+                                </button>
+                                <!-- Окно изменения заголовка отчета -->
+                                <div class="modal fade" id="addModal_{{ report.pk }}" tabindex="-1" aria-labelledby="addModalLabel_{{ report.pk }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="addModalLabel_{{ report.pk }}">Изменить заголовок отчета</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form method="POST" action="{% url 'report-update' report.pk %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <div class="row g-2 text-start">
+                                                        <div class="col-xl-4">Отчетный период:</div>
+                                                        <div class="col-md-5">{{ rep_form.month }}</div>
+                                                        <div class="col-md-3">{{ rep_form.year }}</div>
+                                                        <div class="col-xl-4">Примечание:</div>
+                                                        <div class="col-md-8">{{ rep_form.note }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="submit" class="btn btn-primary btn-sm">Изменить</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if report.records_count > 0 %}
+                                    <button type="button" class="btn btn-outline-success btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#sendModal_{{ report.pk }}">
+                                        <i class="bi bi-send-fill"></i><span class="m-1">Отправить</span>
+                                    </button>
+
+                                    <!-- Окно подтверждения отправки отчета -->
+                                    <div class="modal fade" id="sendModal_{{ report.pk }}" tabindex="-1" aria-labelledby="addModalLabel_{{ report.pk }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="sendModalLabel_{{ report.pk }}">Отправить отчет на проверку ?</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="card-body text-start">
+                                                    <p>Отчет за {{ report.report_date|date:"F Y"|lower }}</p>
+                                                    <div class="collapse" id="collapseExample">
+                                                        <p class="fs-6 text-black-50">Ваш менеджер будет автоматически уведомлен по электронной почте. Отправка сообщения может занять некоторое время ..</p>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <form id="sendReportForm" method="POST" action="{% url 'report-send' %}">
+                                                        {% csrf_token %}
+                                                        <button id="sendReportButton" type="submit" class="btn btn-primary btn-sm" name="send"
+                                                                value="{{ report.pk }}" data-bs-toggle="collapse" data-bs-target=
+                                                                        "#collapseExample" aria-expanded="false" aria-controls=
+                                                                        "collapseExample">
+                                                            Отправить
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            {% if report.status == 'draft' and can_delete %}
+                                <button type="button" class="btn btn-outline-danger btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#delete_{{ report.pk }}">
+                                    <i class="bi bi-trash"></i><span class="m-1">Удалить</span>
+                                </button>
+                                <!-- Окно подтверждения удаления отчета -->
+                                <div class="modal fade" id="delete_{{ report.pk }}" tabindex="-1" aria-labelledby="deleteLabel_{{ report.pk }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteLabel_{{ report.pk }}">Удалить черновик отчета ?</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="card-body text-start">Отчет за {{ report.report_date|date:"F Y"|lower }}</div>
+                                            <div class="modal-footer">
+                                                <a href="{% url 'report_delete' report.pk %}" class="btn btn-danger btn-sm" tabindex="-1" role="button" aria-disabled="true">Удалить</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if report.records_count > 0 %}
+                                <a href="{% url 'report_export' report.pk %}" class="btn btn-outline-secondary btn-sm btn-sm mb-1">
+                                    <i class="bi bi-save"></i><span class="m-1">Сохранить</span>
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'user_home' %}" class="btn btn-outline-secondary btn-sm mb-1">
+                                <i class="bi bi-x-lg"></i><span class="m-1">Закрыть</span>
+                            </a>
+                        {% endif %}                   
+                    </div>
+                    <!-- Контакты сервиса -->
+                    {% if request.user.is_staff %}
+                    <div class="col-12 d-flex flex-wrap gap-2">
+                        <div>
+                            <i class="bi bi-house-door-fill"></i>
+                            {{ report.service_center.addr }}
+                        </div>
+                        <div>
+                            <i class="bi bi-envelope-fill"></i>
+                            <a href="mailto:{{ report.service_center.user.email }}">{{ report.service_center.user.email }}</a>
+                        </div>
+                        {% if report.service_center.servicecontacts_set.all.first %}
+                        <div>
+                            <i class="bi bi-telephone-outbound-fill"></i>
+                            <a href="tel:{{ contact.tel_num }}">{{ report.service_center.servicecontacts_set.all.first.tel_num }}</a>
+                            ({{ report.service_center.servicecontacts_set.all.first.name }})
+                        </div>
+                        {% endif %}
+                    </div>  
+                    {% endif %}
+                </div>
+                
+                <!--Итоги и документы -->
+                <div class="row pb-1">
+                    <!--Итоги -->
+                    <div class="col row">
+                        <h6 class="col-auto">Итоги:</h6>                        
+                        <div class="col row">
+                            <div class="col-auto">
+                                <h6>Ремонты: {{ report.records_count }}</h6>
+                                <h6>Итого: {{ report.total_cost }} руб</h6>
+                            </div>
+                            <div class="col-sm row">
+                                <div class="col-auto">
+                                За работы: {{ report.total_work }} руб<br>
+                                За детали: {{ report.total_part }} руб<br>
+                                </div>
+                                <div class="col-auto">
+                                    За выезд: {{ report.total_move }} руб
+                                </div>                
+                            </div>
+                        </div>
+                    </div>
+                    <!--Документы -->
+                    <div class="col-lg row">
+                        <h6 class="col-auto">Документы:</h6>                            
+                        <div class="col-auto mt-2 mt-sm-0">
+                            {% if report.reportdocumnent_set.all %}
+                                {% for doc in report.reportdocumnent_set.all %}
+                                    <div class="row">
+                                        <div class="col-auto"><a href='{{ doc.file.url }}' class='text-decoration-none' target="_blank">{{ doc.get_title_display }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}</a></div>                        
+                                        <!--Кнопка удаления документа-->
+                                        {% if report.status != 'payment' and  report.status != 'accepted' and request.user == report.service_center.user %}
+                                            <form class="col text-end" method="POST" action="{% url 'report-document-delete' report.pk %}">                                         
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-link text-danger p-0" style="font-size:0.8rem" name="document" value="{{ doc.pk }}">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% else %}               
+                                <span class="text-danger"><i class="bi bi-envelope"></i> нет платежных документов</span>
+                            {% endif %}
+                        </div>
+                        {% if report.status != 'payment' and  report.status != 'accepted' and request.user == report.service_center.user %}
+                            <div class="col text-end">
+                                <button type="button" class="btn btn-outline-secondary btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#addDocument_{{ report.pk }}">
+                                    Добавить документ
+                                </button>
+                                <!-- Окно загрузки документа -->
+                                <div class="modal fade" id="addDocument_{{ report.pk }}" tabindex="-1" aria-labelledby="addDocumentLabel_{{ report.pk }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="addDocumentLabel_{{ report.pk }}">Добавление документа</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form id="document_form" method="POST" action="{% url 'report-document-upload' report.pk %}" enctype="multipart/form-data">
+                                                {% csrf_token %}
+                                                {{ document_form.report }}
+                                                <div class="modal-body">
+                                                    <div class="row g-2 text-start">
+                                                        <div class="col-md-4">Документ:</div>
+                                                        <div class="col-md-8">{{ document_form.title }}</div>
+                                                        <div class="col-md-4">Номер:</div>
+                                                        <div class="col-md-2">{{ document_form.number }}</div>
+                                                        <div class="col-md-2 text-end">Дата:</div>
+                                                        <div class="col-md-4">{{ document_form.date }}</div>
+                                                        <div class="col-md-2">Файл:</div>
+                                                        <div class="col-md-10">{{ document_form.file }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <div id='buttons'>
+                                                        <button type="submit" class="btn btn-primary btn-sm">Добавить</button>
+                                                    </div>
+                                                    <div id='buttons_disabled' style="display:none">
+                                                        <button class="btn btn-primary btn-sm" disabled>
+                                                            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                                                            Добавить
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>                            
+                </div>
+
+                <!-- Коменнтарий, ошибки, кнопка добавить -->
+                <div class="row mt-3 justify-content-between">
+                    <div class="col row mb-2">
+                        {% if report.note %}
+                        <div class="col-12">
+                            <i class="bi bi-info-square"></i><label class="px-3">{{ report.note }}</label>   
+                        </div>
+                        {% endif %}
+                        {% if report.have_fault %}
+                        <div class="col-12">
+                            <i class="bi bi-exclamation-square-fill text-warning"></i><strong class="px-3">есть записи с ошибками !</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if report.user == request.user %}
+                        {% if report.status == 'draft' or report.status == 'refinement' %}
+                            <div class="col-md-auto text-md-end">
+                                <a href="{% url 'record_add_page' report.pk %}" class="btn btn-outline-primary btn-sm btn-sm">
+                                    <i class="bi bi-plus-lg"></i><span class='m-1'>Добавить запись</span>
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>            
+            </div>
+        </div>
+    </div>
+    
+    <!-- ЗАПИСИ -->
+    <div class="row">
+        {% for record in records %}
+        <div class="card mt-1" id="record-{{ record.pk }}">
+            <div class="card-body">
+                <div class="row p-2 mb-2 bg-light text-dark border align-items-center">
+                    <div class="row col">
+                        <div class="col-auto col-lg-2">
+                            <div>
+                            {% if request.user.is_staff or report.status == 'refinement' %}
+                                {% if record.verified %}
+                                <i class="bi bi-check-square-fill text-success m-2"></i>
+                                {% else %}
+                                <i class="bi bi-square text-danger m-2"></i>
+                                {% endif %}
+                            {% endif %}
+                            <strong>{{ record.get_work_type_display }}</strong>
+                            </div>
+                            <div style="font-size:0.8rem" class="text-muted">Номер записи: {{ record.pk }}</div>
+                        </div>
+                        <div class="col-auto col-lg-4"><strong>{{ record.product }}</strong></div>
+                        <div class="col-auto col-lg-3"><strong>{{ record.model_description }}</strong></div>
+                        <div class="col-auto col-lg-3"><strong>{{ record.serial_number }}</strong></div>
+                    </div>
+                    <!-- кнопки -->
+                    <div class="col-auto d-flex align-self-start">                        
+                        {% if request.user.is_staff %}
+                            <!-- кнопки, доступные менеджеру -->
+                            <a href="{% url 'record-for-staff' record.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></a>
+                        {% else %}
+                            <!-- кнопки, доступные пользователю -->
+                            {% if report.status == 'draft' or report.status == 'refinement' %}
+                                <!-- если отчет "черновик" или "на доработке" -->
+                                {% if record.verified %}
+                                    <a href="{% url 'record_update_page' record.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-eye"></i></a>
+                                {% else %}
+                                    <div>
+                                        <a href="{% url 'record_update_page' record.pk %}"class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i></a>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-justify"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#copyModal-{{ record.pk }}" data-bs-placement="bottom" title="Копировать запись">
+                                                    копировать
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#removeModal-{{ record.pk }}" data-bs-placement="bottom" title="Перенести на следующий месяц">
+                                                    перенести на следующий месяц
+                                                </button>
+                                            </li>                                            
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <!-- если отчет не "черновик" и не "на доработке" доступна только кнопка просмотра -->
+                                <a href="{% url 'record_update_page' record.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-eye"></i></a>
+                            {% endif %}
+                        {% endif %}                      
+                    </div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-lg-8">
+                        <div class="row">
+                            {% if record.client %}
+                            <div class="col-md-4">{{ record.client }} ({{ record.client_phone }})</div>
+                            {% endif %}
+                            <div class="col-md-8">
+                                <div class="col-12"><label class="text-muted">Неисправность:</label> {{ record.problem_description|truncatewords:8 }}</div>
+                                <div class="col-12"><label class="text-muted">Код:</label> {{ record.code|truncatewords:8 }}</div>
+                                <div class="col-12"><label class="text-muted">Работы:</label> {{ record.work_description|truncatewords:8 }}</div>
+                            </div>
+                        </div>
+                        <div class="row mt-2 mb-2">
+                            <div class="col-md-3">За работы: {{ record.work_cost }}</div>
+                            <div class="col-md-3">За выезд: {{ record.move_cost }}</div>
+                            <div class="col-md-3">За детали: {{ record.parts_cost }}</div>
+                            <div class="col-md-3"><strong>Итого: {{ record.total_cost }}</strong></div>
+                        </div>
+                        {% if record.note %}
+                        <div class="row">
+                            <div class="col-12">
+                                <i class="bi bi-info-square"></i><label class="px-3">{{ record.note }}</label>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {% show_record_parts_list record %}
+                    </div>
+                </div>
+                {% if record.errors %}
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <i class="bi bi-exclamation-square-fill text-warning"></i></i><strong class="px-3">{{ record.errors }}</strong>
+                    </div>
+                </div>
+                {% endif %}
+                {% if record.remarks %}
+                    {% if request.user.is_staff %}
+                    <div class="row mt-1">
+                        <div class="col-12">
+                            <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3 text-danger">{{ record.remarks }}</strong>
+                        </div>
+                    </div>
+                    {% elif report.status == 'refinement' %}
+                    <div class="row mt-1">
+                        <div class="col-12">
+                            <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3 text-danger">{{ record.remarks }}</strong>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Окно запроса подтверждения копирования ремонта -->
+        <div class="modal fade" id="copyModal-{{ record.pk }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="copyModalLabel-{{ record.pk }}" aria-hidden="true">
+            <div class="modal-dialog  modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="{% url 'record-copy' %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="copyModalLabel-{{ record.pk }}">Вы действительно хотите скопировать этот ремонт ?</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Будут скопированны все поля кроме серийного номера. Пожалуйста, не забудьте указать корректный серийный номер в новой записи.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary btn-sm" name="copy" value="{{ record.pk }}">Скопировать</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Закрыть</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Окно запроса подтверждения переноса ремонта на следующий месяц-->
+        <div class="modal fade" id="removeModal-{{ record.pk }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="removeModalLabel-{{ record.pk }}" aria-hidden="true">
+            <div class="modal-dialog  modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="{% url 'record-remove' %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="removeModalLabel-{{ record.pk }}">Вы действительно хотите перенсти этот ремонт на следующий месяц ?</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Ремонт будет удален из отчета за текущий месяц и перенесен на следующий. Если отчета за следующий месяц еще нет - он будет создан автоматически.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary btn-sm" name="remove" value="{{ record.pk }}">Перенести</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Закрыть</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+               
+        {% endfor %}
+    </div>
+    {% if records %}
+    <!-- кнопка ВВЕРХ -->
+    {% include 'inc/go_to_top_button.html' %}
+    {% endif %}
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    $('#document_form').submit(function(){
+        $('#buttons').hide();
+        $('#buttons_disabled').show();
+    });
+
+    $('#sendReportForm').submit(function(){
+        $('#sendReportButton').hide();
+    });
+</script>
+
+
+{% endblock %}

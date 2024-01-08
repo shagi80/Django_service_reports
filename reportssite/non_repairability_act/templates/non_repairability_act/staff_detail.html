@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+{% load static %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+
+{% include 'inc/staff_navbar.html' %}
+
+
+<div class="container">
+    <main class="row justify-content-between p-2">
+
+        <div class="col-lg-9 px-lg-4">
+            <!-- Заголовок -->
+            <div class="row border border-dark rounded shadow px-3 py-2 mb-2 bg-body rounded">
+                <div class="col-sm-10">
+                    <h3 class="mb-0 text-primary">
+                        Акт № {{ act.pk }} от {{ act.doc_date}}
+                    </h3>
+                    <h4>
+                        {{ act.center.title }} ({{ act.center.city }})
+                    </h4>
+                </div>
+                <div class="col-sm-2 text-center">
+                    {{ act.status|colored_act_status|safe }}
+                </div>
+            </div>
+            <!-- Замечание к отчету -->
+            {% if act.member_for_user %}
+                <div class="row border border-dark rounded shadow p-3 mb-1 bg-body rounded justify-content-between">
+                    <div class="col-11">
+                        <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3">{{ act.member_for_user }}</strong>
+                    </div>
+                    {% if  act.center.staff_user == request.user or request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                        {% if act.status.status == 'accepted' or act.status.status == 'received' %}
+                        <form method="POST" action="{% url 'act-delete-user-member' %}" class="col-1 text-danger text-end">
+                            {% csrf_token %}
+                            <button type="submit" name="act_pk" value="{{ act.pk }}" class="btn btn-outline-link btn-sm">
+                                <span class="text-danger"><i class="bi bi-x-lg"></i></span>
+                            </button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!-- Основная часть данных -->
+            <div class="row border border-dark rounded shadow p-3 pb-4 my-2 bg-body rounded gy-1">
+                <div class="col-12 col-sm-3 text-muted">Вид продукции</div>
+                <div class="col-12 col-sm-9">{{ act.product }}</div>
+                <div class="col-12 col-sm-3 text-muted">Модель</div>
+                <div class="col-12 col-sm-9">{{ act.model_description }}</div>
+                <div class="col-12 col-sm-3 text-muted">Серийный номер</div>
+                <div class="col-12 col-sm-9">{{ act.serial_number }}</div>
+                <div class="col-12 col-sm-3 text-muted">Дата продажи клиенту</div>
+                <div class="col-12 col-sm-9">
+                    {% if act.work_type == 'pretrading' %}
+                        предторговый
+                    {% else %}
+                        {{ act.buy_date }}
+                    {% endif %}
+                </div>
+                <div class="col-12 col-sm-3 text-muted">Дата поступления в СЦ</div>
+                <div class="col-12 col-sm-9">{{ act.receipt_date }}</div>
+                {% if act.repairs %}
+                    <div class="col-12 col-sm-3 text-muted">Ремонты</div>
+                    <div class="row col-12 col-sm-9">
+                    {% for repair in act.repairs %}
+                        <div class="col-11">
+                            <div>{{ repair.report__service_center__title }} ({{ repair.report__service_center__city }}), {{ repair.end_date }}</div>
+                            <div>{{ repair.code__code }} {{ repair.code__title }}</div>
+                        </div>
+                        <div class="col-1">
+                            {% if repair.report__status != 'draft' %}
+                            <button class="btn btn-outline-secondary btn-sm"><a href='{% url "record-for-staff" pk=repair.pk %}'>
+                                <i class="bi bi-eye"></i>
+                            </a></button>
+                            {% else %}
+                                <span class="text-muted">черн</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+                {% if act.completeness %}
+                    <div class="col-12 col-sm-3 text-muted">Комплектность</div>
+                    <div class="col-12 col-sm-9">{{ act.completeness }}</div>
+                {% endif %}
+                <div class="col-12 col-sm-3 text-muted">Заявленная неисправность</div>
+                <div class="col-12 col-sm-9">{{ act.problem_description }}</div>
+                {% if act.client %}
+                    <div class="col-12 col-sm-3 text-muted">Клиент</div>
+                    {% if act.client_type == 'organization' %}
+                        <div class="col-12 col-sm-9 text-primary">организация</div>
+                        <div class="col-12 col-sm-3 text-muted"></div>
+                    {% endif %}
+                    <div class="col-12 col-sm-9">
+                        {{ act.client }}
+                        {% if act.client_phone %}
+                            , {{ act.client_phone }}
+                        {% endif %}
+                        {% if act.client_addr %}
+                            , {{ act.client_addr }}
+                        {% endif %}
+                        {% if act.client_email %}
+                            , {{ act.client_email }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+                <div class="col-12 col-sm-3 text-muted">Продавец</div>
+                <div class="col-12 col-sm-9">
+                    {{ act.shop }} , {{ act.shop_phone }} , {{ act.shop_addr }}
+                </div>
+                <div class="col-12 col-sm-3 text-muted">Выявленная неисправность</div>
+                <div class="col-12 col-sm-9">{{ act.work_description }}</div>
+                {% if act.code %}
+                    <div class="col-12 col-sm-3 text-muted">Код неисправности</div>
+                    <div class="col-12 col-sm-9">{{ act.code }}</div>
+                {% endif %}
+                <div class="col-12 col-sm-3 text-muted">Заключение</div>
+                <div class="col-12 col-sm-9"><strong>{{ act.decree }}</strong></div>
+                <div class="col-12 col-sm-3 text-muted">Местонахождение изделия</div>
+                {% if act.device_location %}
+                <div class="col-12 col-sm-9">{{ act.get_device_location_display }}</div>
+                {% else %}
+                <div class="col-12 col-sm-9"><strong class="text-danger">местнахождение не определено !</strong></div>
+                {% endif %}
+                {% if act.note %}
+                    <div class="col-12 col-sm-3 text-muted">Примечание</div>
+                    <div class="col-12 col-sm-9 text-danger">{{ act.note }}</div>
+                {% endif %}
+            </div>
+            <!-- Файлы и Итог -->
+            <div class="row">
+                <!-- Файлы -->
+                {% if act.documents.all %}
+                    <div class="col-md-8 ">
+                        <div class="row me-md-1 border border-dark rounded shadow p-3 mb-2 mb-md-0 bg-body rounded">
+                            <h5>Приложенные файлы:</h5>
+                            {% for doc in act.documents.all %}
+                                <div class="col-12"><a href='{{ doc.file.url }}' class='text-decoration-none' target="_blank">{{ doc.get_title_display }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}</a></div>                        
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- История -->
+                <div class="col-md-4">
+                    <div class="row border border-dark rounded shadow p-3 bg-body rounded">
+                        <h5 class="p-0">История:</h5>
+                        {% for status in act.statuses.all %}
+                            <div class="mt-2 border border-dark rounded bg-light pb-2" style="font-size:0.9em">
+                                <strong>{{ status.get_status_display }}</strong>
+                                <div>{{ status.created_at }}</div>
+                                <div>{{ status.user }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col col-lg-3 my-3 my-lg-0">
+            <!-- Действия -->
+            <div class="row border border-dark rounded shadow p-3 bg-body rounded">
+                <h5>Действия</h5>
+                <div class="col-12 text-center gap-1">
+                    <!-- Кнопки, доступные только суперюзеру -->
+                    {% if request.user.is_superuser %}
+                        {% if act.status.status == 'draft' or act.status.status == 'refinement' %}
+                            <button type="button" class="btn btn-outline-primary my-1 btn-status w-100" new_status='send' data-bs-toggle="modal" data-bs-target="#statusModal">Отравить</button>    
+                        {% endif %}
+                    {% endif %}
+                    <!-- Кнопки, доступные сервис-менеджеру -->
+                    {% if  act.center.staff_user == request.user or request.user.is_superuser or request.user|has_group:'GeneralStaff' %}         
+                        {% if act.status.status == 'send' or act.status.status == 'send_again' %}
+                            <button type="button" class="btn btn-outline-primary my-1 btn-status w-100" new_status='received' data-bs-toggle="modal" data-bs-target="#statusModal">Начать проверку</button>    
+                        {% elif act.status.status == 'received' %}
+                            <button type="button" class="btn btn-outline-primary my-1 btn-status w-100" new_status='accepted' data-bs-toggle="modal" data-bs-target="#statusModal">Принять</button>    
+                            <button type="button" class="btn btn-outline-danger my-1 w-100" data-bs-toggle="modal" data-bs-target="#refinementModal">На доработку</button>
+                            <button type="button" class="btn btn-outline-danger my-1 w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">Удалить</button>
+                        {% elif act.status.status == 'accepted' and  act.center.staff_user == request.user %}
+                            <button type="button" class="btn btn-outline-danger my-1 w-100" data-bs-toggle="modal" data-bs-target="#refinementModal">На доработку</button>
+                            <button type="button" class="btn btn-outline-danger my-1 w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">Удалить</button>
+                        {% endif %}
+                    {% endif %}
+                    <!-- Кнопки, доступные только GeneralStaff -->
+                    {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                        {% if act.status.status == 'accepted' %}
+                            <button type="button" class="btn btn-outline-primary my-1 btn-status w-100" new_status='confirmed' data-bs-toggle="modal" data-bs-target="#statusModal">Подтвердить</button> 
+                            <button type="button" class="btn btn-outline-danger my-1 w-100" data-bs-toggle="modal" data-bs-target="#refinementModal">На доработку</button>
+                            <button type="button" class="btn btn-outline-danger my-1 w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">Удалить</button>
+                        {% endif %}
+                    {% endif %}
+                    <!-- Кнопки, доступные только SalesManager -->
+                    {% if request.user|has_group:'GeneralStaff' or request.user|has_group:'SalesManager' or request.user.is_superuser  %}
+                        {% if act.status.status == 'confirmed' %}        
+                            <button type="button" class="btn btn-outline-primary my-1 btn-status w-100" new_status='compensated' data-bs-toggle="modal" data-bs-target="#statusModal">Компенситровать</button>    
+                        {% endif %}
+                    {% endif %}
+                    <!-- Кнопка "Печать" -->
+                    {% if act.status.status == 'confirmed' or act.status.status == 'compensated' %}
+                        <a href="{% url 'act-download' act.pk %}" class="btn btn-outline-secondary my-1 w-100">Скачать</a>
+                    {% endif %}
+                    <!-- Кнопка "К списку актов" -->
+                    <a href="{% url 'act-list' %}" class="btn btn-outline-secondary my-1 w-100">К списку актов</a>
+                    <!-- Модальное окно изменения статуса акта -->
+                    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="POST" action="{% url 'act-staff-change-status' %}">
+                                    {% csrf_token %}
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="statusModalLabel">Изменить статус акта ?</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div id="device-location-div" class="modal-body text-start" hidden>
+                                        <div class="p-2 pb-4">
+                                            <label class="mb-2 text-danger"><strong>Дальнейшая судьба изделия:</strong></label>
+                                            <div class="">
+                                                <select class="col-12 form-select form-select-sm" name="dev-location">
+                                                    {% for loc in dev_location %}
+                                                    <option value="{{loc}}">{{ loc.label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <input id='input-status' name='new_status' value='' hidden>
+                                        <button type="submit" class="btn btn-primary btn-sm" name="act_pk" value="{{ act.pk }}">Изменить</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>    
+                    <!-- Модальное окно подтверждения удаление акта -->
+                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="POST" action="{% url 'act-staff-delete' act.pk %}">
+                                    {% csrf_token %}
+                                    <div class="modal-header">
+                                        <h5 class="modal-title text-danger" id="deleteModalLabel">ВНИМАНИЕ !</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-start">
+                                        <h6>Вы действительно хотите удалить этот акт ?</h6>
+                                        {% if record.reportsparts_set.all %}
+                                            <p class="mb-2">Вместе с ремонтом буду удалены и детали. Убедитесь, что они еще не отправлены или примите решение о том, как будет учтена их стоимость !</p>
+                                        {% endif %}
+                                        <h6>Сообщение для сервиса:</h6>
+                                        <textarea class="form-control mb-2" rows=3 name="message"></textarea>
+                                        <p class="text-muted text-center mb-0">В сервисный центр будет отправлено автоматическое уведомление.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button id="recordDeleteBtn" type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                                        <div id="recordDeleteBody" style="display: none">
+                                            <button type="submit" class="btn btn-danger btn-sm" name="delete" value="{{ record.pk }}" disabled>
+                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div> Удалить
+                                            </button>    
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- окно отправки сообщения пользователю -->
+                    <div class="modal fade" id="refinementModal" tabindex="-1" aria-labelledby="refinementModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <form method="POST" action="{% url 'act-staff-change-status' %}">
+                                {% csrf_token %}
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title text-danger" id="refinementModalLabel">Отправить Акт на доработку ?</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-start">
+                                        <label class="mt-2 fw-bold">Сообщение пользователю:</label>
+                                        <textarea class="form-control" rows=4 name="message"></textarea>
+                                        <p class="text-muted text-center mb-0">В сервисный центр будет отправлено автоматическое уведомление.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <input id='input-status' name='new_status' value='refinement' hidden>
+                                        <button type="submit" class="btn btn-primary btn-sm" name="act_pk" value="{{ act.pk }}">Выполнить</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>                
+                    </div>
+                </div>
+            </div>
+            <!-- Замечания к отчету -->
+            <div class="row mt-2 border border-dark rounded shadow p-3 bg-body">               
+                <h6>Замечания к акту:</h6>
+                <div class="col-12">
+                    {% if act.status.status == 'received' or act.status.status == 'accepted' or act.status.status == 'confirmed'  or act.status.status == 'compensated' %}
+                        <form method="POST" action="{% url 'act-staff-add-member' %}">
+                            {% csrf_token %}
+                            <textarea id="memberText" class="form-control" rows=3 name="text" oninput="display();"></textarea>
+                            <input name="act_pk" value="{{ act.pk }}" hidden>
+                            <div class="d-flex justify-content-center mt-2 gap-1">
+                                {% if act.status.status != 'confirmed' and act.status.status != 'compensated' %}
+                                    {% if  act.center.staff_user == request.user or request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                                    <button id="memberUserBtn" disabled type="submit" name="mode" value="for_center" class="btn btn-outline-danger btn-sm">
+                                        для сервиса
+                                    </button>
+                                    {% endif %}
+                                {% endif %}
+                                <button id="memberStaffBtn" disabled type="submit"  name="mode" value="for_staff" class="btn btn-outline-dark btn-sm">
+                                    для менеджера
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}                  
+                </div>
+                {% if act.members.all %}
+                    <form method="POST" action="{% url 'act-delete-member' %}"> 
+                        {% csrf_token %}   
+                        <input name="act_pk" value="{{ act.pk }}" hidden>                  
+                        <hr>
+                        {% for member in act.members.all %}
+                        <div class="row mt-2 border border-dark rounded shadow bg-light" style="font-size:0.9em">
+                            <div class="d-flex justify-content-between align-items-end">
+                                <div>
+                                    {% if member.for_center %}
+                                        <strong class="text-danger">Для сервиса</strong>
+                                    {% else %}
+                                        <strong>Для менеджера</strong>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if  member.user == request.user or request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                                        <button type="submit" name="member_pk" value="{{ member.pk }}" class="btn btn-outline-link btn-sm">
+                                            <span class="text-danger"><i class="bi bi-x-lg"></i></span>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span>{{ member.text }}</span>
+                            <p class="my-0 mb-3 text-muted">{{ member.created_at|date:'d B y H:i'}} {{ member.user }}</p>
+                        </div>
+                        {% endfor %}
+                    </form> 
+                {% endif %}  
+            </div>
+
+        </div>
+    </main>
+    
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+
+    $('.btn-status').click(function(event){
+        var status = $(event.target).attr('new_status');
+        $('#input-status').val(status);
+        if(status=='confirmed'){
+            $("#device-location-div").prop('hidden', false);
+        }
+    })
+
+    var display = function (){
+        if ($("#memberText").val() != ''){
+            $("#memberUserBtn").removeAttr('disabled');
+            $("#memberStaffBtn").removeAttr('disabled');
+        } else {
+            $("#memberUserBtn").attr('disabled', true);
+            $("#memberStaffBtn").attr('disabled', true);    
+        }
+    };
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,28 @@
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row py-1 bg-light text-dark border border-border">
+            <strong>{{ action.get_model_display|capfirst }} - {{ action.get_action_on_model_display|lower }} </strong>
+        </div>
+        <div class="col-12 mt-1">
+            {% for line in obj_description %}
+            {{ line }}<br>
+            {% endfor %}
+        </div>
+        <div class="row mt-1">
+            {% for key,val in data.items %}
+            <div class="row">
+                <div class="col-auto"><strong>{{ key }}:</strong></div>
+                <div class="col-auto">{{ val }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="row mt-2">
+            <div class="col-sm-4">
+                <h6 class="card-title text-muted">{{ action.user }}</h6>
+            </div>
+            <div class="col-auto">
+                <h6 class="card-title text-muted">{{ action.changed }}</h6>
+            </div>
+        </div>
+    </div>
+ </div>

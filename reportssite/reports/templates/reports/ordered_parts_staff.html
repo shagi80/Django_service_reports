@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+{% include 'inc/staff_navbar.html' %}
+{% else %}
+{% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container">
+
+    <h3 class="py-4">{{ title }}</h3>
+
+    <div class="row g-5">
+       
+            <div class="col-lg-4  order-lg-last">
+                <h4 class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-primary">Найдено деталей</span>
+                    <span class="badge bg-primary rounded-pill">{{ obj_count }}</span>
+                </h4>
+                <form class="card p-3 pb-4 shadow" method="get">
+                    <div class="row mb-3">
+                        <label class="col-xl-3 col-form-label">Сервис</label>
+                        <div class="col-xl-9">
+                            {{ form.center }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-xl-3 col-form-label">Деталь</label>
+                        <div class="col-xl-9">
+                            {{ form.filter }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-xl-3 col-form-label">Старше</label>
+                        <div class="col-xl-3">
+                            {{ form.period }}
+                        </div>
+                        <label class="col-xl-6 col-form-label">дней</label>
+                    </div>
+                    <div class="row mb-9">
+                        <label class="col-xl-9 col-form-label">Показать отправленные</label>
+                        <div class="col-xl-3">
+                            {{ form.show_send }}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i>
+                            выбрать
+                        </button>
+                        <a class="btn btn-outline-primary" href="{% url 'staff-ordered-parts' %}" role="button">
+                            <i class="bi bi-x-lg"></i>
+                            сбросить
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-lg-8 d-grid gap-3">
+                {% if centers %}
+                    {% for center in page_obj %}
+                        <form id="{{ center.pk }}" class="row justify-content-center border p-3 border border-dark rounded shadow" method="POST" action='{% url "send-parts" %}'>
+                            {% csrf_token %}
+                            <div class="row  justify-content-between bg-light border border-secondary mb-3">
+                                <div class='col-md-10'>
+                                    <h5 class="mb-0 mt-2">{{ center.title }} ({{ center.region__title }})</h5>
+                                    <div class="mb-2">Адрес: {{ center.post_addr }}</div>
+                                </div>
+                                {% if request.user.pk == center.staff_user or request.user.pk == center.region__staff_user or request.user.is_superuser %}                                   
+                                    <div class='col-md-2 justify-content-md-end p-3 d-flex gap-2 align-items-start'>
+                                        <a  role="button" class="btn btn-outline-primary" href="{% url 'parts-to-xls' center.pk %}" role="button">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        <!-- Кнопка-триггер модального окна -->
+                                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#sendModal{{ center.pk }}">
+                                            <i class="bi bi-box2"></i>
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% for report in reports %}
+                                {% if report.service_center__pk == center.pk %}
+                                    <div class="bg-light mb-1">
+                                        <h5>Отчет за {{ report.report_date|date:"F Y" }}</h5>
+                                    </div>
+                                    {% for record in records %}
+                                        {% if record.report__pk == report.pk %}  
+                                            <div>
+                                                <h6>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm mb-1 data-button" record-pk="{{ record.pk }}"  data-bs-toggle="modal" data-bs-target="#recordData">
+                                                        <i class="bi bi-search" record-pk="{{ record.pk }}"></i>
+                                                    </button>
+                                                    <span class="mx-1">
+                                                        {{ record.product }}
+                                                        {{ record.model_description }}
+                                                        SN:{{ record.serial_number }}
+                                                    </span>
+                                                </h6>
+                                                <ul>                                    
+                                                {% for part  in parts %}
+                                                    {% if part.record__pk == record.pk %}
+                                                        {% if part.order_date|part_is_expired:7 %}
+                                                        <div class="row text-danger">
+                                                        {% else %}
+                                                        <div class="row">
+                                                        {% endif %}
+                                                            <div class="col-lg-8">
+                                                                {% if part.send_number %}
+                                                                    <i class="bi bi-check-square-fill"></i>
+                                                                {% else %}
+                                                                    {% if request.user.pk == center.staff_user or request.user.pk == center.region__staff_user or request.user.is_superuser %}
+                                                                    <input type="checkbox" name="part{{ part.pk }}">
+                                                                    {% else %}
+                                                                    <i class="bi bi-square"></i>
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                                <span class="mx-1">{{ part.title }}-{{ part.count }}шт</span>         
+                                                            </div>                                                               
+                                                            {% if part.send_number %}
+                                                                <div class="col-lg-4">
+                                                                    {{ part.send_date }}, {{ part.send_number }}
+                                                                </div>
+                                                            {% else %}
+                                                                <div class="col-lg-4 text-lg-end">
+                                                                    <div class="text-danger">не отправлено</div>
+                                                                    <div class="text-danger" style="font-size:0.8rem"> (заказано {{ part.order_date|date:"d m y" }})</div>
+                                                                </div>
+                                                            {% endif %}                                                                 
+                                                        </div>
+                                                    {% endif %}                   
+                                                {% endfor %}
+                                                </ul> 
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}                                 
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <!-- Модальное окно -->
+                            <div class="modal fade" id="sendModal{{ center.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="sendModalLabel{{ center.pk }}">Данные об отправке</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row mt-2 align-items-center">
+                                            <label class="col-4">№ отправления:</label>
+                                            <div class="col-7">
+                                                <input type="Text" required class="form-control form-control-sm" name="number">
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2 align-items-center">
+                                            <label class="col-4">Дата отправки:</label>
+                                            <div class="col-4">
+                                                <input type="Date" required class="form-control form-control-sm" name="send_date">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modalButtons modal-footer">
+                                        <button type="submit" class="btn btn-outline-primary">Отправить</button>
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отменить</button>                                       
+                                    </div>
+                                    <div class="modalButtonsSpin modal-footer justify-content-center" style="display:none;">
+                                        <div class="spinner-border" role="status">
+                                        </div>
+                                        <strong class="text-danger">пожалуйста, подождите ...</strong>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+
+                        </form>
+                    {% endfor%}
+                {% else %}
+                <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+                {% endif %}
+            </div>
+
+            <!-- Окно информации о ремонте -->
+            <div class="modal fade" id="recordData" tabindex="-1" aria-labelledby="recordDataLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div id="recordDataBody"  function-url="{% url 'get-record-data' %}">
+                        </div>
+                        
+                        <div class="modal-footer justify-content-center">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+         
+    </div>
+
+    <!-- кнопка ВВЕРХ -->
+    {% if reports %}  
+        {% include 'inc/go_to_top_button.html' %}
+    {% endif %}
+
+    {% include 'inc/list_paginator.html' %}    
+
+</div>
+
+{% include 'inc/footer.html' %}
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+
+    $('.data-button').click(function(event){
+        $('#recordDataBody').html('<h5 class="my-5 text-center">Идет загрузка данных ...</h5>');
+        recordId = $(event.target).attr("record-pk")
+        console.log(recordId);
+        var functionUrl = $('#recordDataBody').attr('function-url');
+        $.ajax({
+            url: functionUrl,
+            data: {'recordId': recordId},
+            success: function (data) {
+                $('#recordDataBody').html(data);
+                }
+            });
+    });
+
+
+    $('.modalButtons').click(function(){
+        $(this).hide();
+        $('.modalButtonsSpin').show();
+    });
+</script>
+
+{% endblock %}
+
+

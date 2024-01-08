@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+{% load static %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <main class="row mt-4 justify-content-between p-2">
+
+        <div class="col-lg-9 px-lg-4">
+            <!-- Заголовок -->
+            <div class="row border border-dark rounded shadow px-3 py-2 mb-2 bg-body rounded">
+                <div class="col-sm-10">
+                    <h3 class="mb-0 text-primary">
+                        Акт № {{ act.pk }} от {{ act.doc_date}}
+                    </h3>
+                    <h4>
+                        {{ act.center.title }} ({{ act.center.city }})
+                    </h4>
+                </div>
+                <div class="col-sm-2 text-center">
+                    {{ act.status|colored_act_status|safe }}
+                </div>
+            </div>
+            <!-- Основная часть данных -->
+            <div class="row border border-dark rounded shadow p-3 pb-4 my-2 bg-body rounded gy-1">
+                <div class="col-12 col-sm-3 text-muted">Вид продукции</div>
+                <div class="col-12 col-sm-9">{{ act.product }}</div>
+                <div class="col-12 col-sm-3 text-muted">Модель</div>
+                <div class="col-12 col-sm-9">{{ act.model_description }}</div>
+                <div class="col-12 col-sm-3 text-muted">Серийный номер</div>
+                <div class="col-12 col-sm-9">{{ act.serial_number }}</div>
+                <div class="col-12 col-sm-3 text-muted">Дата продажи клиенту</div>
+                <div class="col-12 col-sm-9">
+                    {% if act.work_type == 'pretrading' %}
+                        предторговый
+                    {% else %}
+                        {{ act.buy_date }}
+                    {% endif %}
+                </div>
+                <div class="col-12 col-sm-3 text-muted">Дата поступления в СЦ</div>
+                <div class="col-12 col-sm-9">{{ act.receipt_date }}</div>
+                {% if act.repairs %}
+                    <div class="col-12 col-sm-3 text-muted">Ремонты</div>
+                    <div class="row col-12 col-sm-9">
+                    {% for repair in act.repairs %}
+                        <div class="col-11">
+                            <div>{{ repair.report__service_center__title }} ({{ repair.report__service_center__city }}), {{ repair.end_date }}</div>
+                            <div>{{ repair.code__code }} {{ repair.code__title }}</div>
+                        </div>
+                        <div class="col-1">
+                            <button class="btn btn-outline-secondary btn-sm"><a href='{% url "record-for-staff" pk=repair.pk %}'>
+                                <i class="bi bi-eye"></i>
+                            </a></button>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+                {% if act.completeness %}
+                    <div class="col-12 col-sm-3 text-muted">Комплектность</div>
+                    <div class="col-12 col-sm-9">{{ act.completeness }}</div>
+                {% endif %}
+                <div class="col-12 col-sm-3 text-muted">Заявленная неисправность</div>
+                <div class="col-12 col-sm-9">{{ act.problem_description }}</div>
+                {% if act.client %}
+                    <div class="col-12 col-sm-3 text-muted">Клиент</div>
+                    {% if act.client_type == 'organization' %}
+                        <div class="col-12 col-sm-9 text-primary">организация</div>
+                        <div class="col-12 col-sm-3 text-muted"></div>
+                    {% endif %}
+                    <div class="col-12 col-sm-9">
+                        {{ act.client }}
+                        {% if act.client_phone %}
+                            , {{ act.client_phone }}
+                        {% endif %}
+                        {% if act.client_addr %}
+                            , {{ act.client_addr }}
+                        {% endif %}
+                        {% if act.client_email %}
+                            , {{ act.client_email }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+                <div class="col-12 col-sm-3 text-muted">Продавец</div>
+                <div class="col-12 col-sm-9">
+                    {{ act.shop }} , {{ act.shop_phone }} , {{ act.shop_addr }}
+                </div>
+                <div class="col-12 col-sm-3 text-muted">Выявленная неисправность</div>
+                <div class="col-12 col-sm-9">{{ act.work_description }}</div>
+                {% if act.code %}
+                    <div class="col-12 col-sm-3 text-muted">Код неисправности</div>
+                    <div class="col-12 col-sm-9">{{ act.code }}</div>
+                {% endif %}
+                <div class="col-12 col-sm-3 text-muted">Заключение</div>
+                <div class="col-12 col-sm-9"><strong>{{ act.decree }}</strong></div>
+                <div class="col-12 col-sm-3 text-muted">Местонахождение изделия</div>
+                {% if act.device_location %}
+                <div class="col-12 col-sm-9">{{ act.get_device_location_display }}</div>
+                {% else %}
+                <div class="col-12 col-sm-9"><strong class="text-danger">местнахождение не определено !</strong></div>
+                {% endif %}
+                {% if act.note %}
+                    <div class="col-12 col-sm-3 text-muted">Примечание</div>
+                    <div class="col-12 col-sm-9 text-danger">{{ act.note }}</div>
+                {% endif %}
+            </div>
+            <!-- Файлы и Итог -->
+            <div class="row justify-content-center">
+                <!-- Файлы -->
+                {% if act.documents.all %}
+                    <div class="col-md-8 ">
+                        <div class="row me-md-1 border border-dark rounded shadow p-3 mb-2 mb-md-0 bg-body rounded">
+                            <h5>Приложенные файлы:</h5>
+                            {% for doc in act.documents.all %}
+                                <div class="col-12"><a href='{{ doc.file.url }}' class='text-decoration-none' target="_blank">{{ doc.get_title_display }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}</a></div>                        
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- История -->
+        <div class="col col-lg-3 my-3 my-lg-0">
+            <div class="row border border-dark rounded shadow p-3 bg-body rounded">
+                <h5 class="p-0">История:</h5>
+                {% for status in act.statuses.all %}
+                    <div class="mt-2 border border-dark rounded bg-light pb-2" style="font-size:0.9em">
+                        <strong>{{ status.get_status_display }}</strong>
+                        <div>{{ status.created_at }}</div>
+                        <div>{{ status.user }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+    
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+
+{% endblock %}

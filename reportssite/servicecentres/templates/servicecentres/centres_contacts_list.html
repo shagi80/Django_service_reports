@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}{{ center.title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% include 'inc/staff_navbar.html' %}
+<div class="container">
+    <main>
+        <div class="row py-4 justify-content-between">
+            <div class="col-md-7 text-start"><h3>{{ title }}</h3></div>
+            {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                <div class="col-1 text-end-lg order-last">               
+                    <a class="btn btn-primary" href="{% url 'contact_add_page' %}" role="button">Добавить</a>                
+                </div>
+            {% endif %}
+            <div class="col-lg-4 mb-3">
+                <form class="row row-cols-lg-auto g-3 align-items-center justify-content-end" method="get">
+                        <div class="input-group gap-1">
+                            <input type="text" class="form-control" id="inlineFormInputGroupUsername" placeholder="Сервис/сотрудник" name="filter">
+                            <button type="submit" class="btn btn-outline-primary">Найти</button>
+                            <a class="btn btn-outline-primary" href="{% url 'centres_contacts_page' %}" role="button">Х</a>
+                        </div>
+                </form>
+            </div>
+        </div>
+
+        {% if contacts %}
+        <div class="row justify-content-center">
+            {% for contact in contacts %}
+            <div class="card col-lg-4 p-2">
+                <h5 class="card-header">
+                    <div class="row justify-content-between">
+                        <div class="col-auto">
+                            {{ contact.service_center }}
+                        </div>
+                        <div class="col-auto">
+                            {% if request.user|has_group:"GeneralStaff" or request.user == contact.service_center.staff_user %}
+                              <a href="{{ contact.get_absolute_url }}" class="btn btn-outline-success"><i class="bi bi-pencil"></i></a>
+                            {% else %}
+                            <a href="#" class="btn btn-outline-secondary disabled"><i class="bi bi-pencil"></i></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </h5>
+                <div class="card-body">
+                    <h5 class="card-title">{{ contact.name }}
+                        {% if contact.funct %}
+                        ({{ contact.funct}})
+                        {% endif %}
+                    </h5>
+                    <div class="row">
+                        <div class="col-3">Телефон:</div>
+                        <div class="col-9">{{ contact.tel_num }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-3">E-mail:</div>
+                        <div class="col-9">{{ contact.email }}</div>
+                    </div>
+                    {% if contact.note|delspace != 0 %}
+                    <div class="row">
+                        <div class="col-3">
+                            <i class="bi bi-info-square"></i>
+                        </div>
+                        <div class="col-9">{{ contact.note }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <!-- кнопка ВВЕРХ --!>
+        {% include 'inc/go_to_top_button.html' %}
+        {% else %}
+        <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+        {% endif %}
+    </main>
+
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

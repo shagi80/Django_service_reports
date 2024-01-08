@@ -1,0 +1,50 @@
+<div class="modal-header">
+    <h4 class="modal-title" id="recordDataLabel_{{ report.pk }}">{{ record.report.service_center }}</h4>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <p><strong>
+        {{ record.product.title }}<br>
+        {{ record.model_description }}
+        SN:{{ record.serial_number }}
+    </strong></p>
+    <p>
+        <strong>Клиент:  </strong>
+        {% if record.client %}
+            {{ record.client }} ({{ record.client_phone }})
+        {% else %}
+            предторговый ремонт
+        {% endif %}
+    </p>
+    <p><strong>Неисправность:  </strong>{{ record.problem_description }}</p>
+    <p><strong>Код:  </strong>{{ record.code }}</p>
+    <p>
+        {% if record.buy_date %}
+            <strong>Дата продажи:  </strong>{{ record.buy_date }}<br>
+        {% endif %}
+        <strong>Дата начала ремонта:  </strong>{{ record.start_date }}
+    </p>
+    <p class="mb-0"><strong>Все детали: </strong></p>
+    <ul class="my-0 py-0">
+        {% for part in record.reportsparts_set.all %}
+            <li class="my-0 py-0">
+                {{ part }} - {{ part.count }} шт
+                {% if not part.order_date %}
+                    X {{ part.price }} руб
+                {% endif %} 
+            </li>                                                               
+        {% endfor %}
+    </ul>
+    {% if record.recorddocumnent_set.all %}
+        <p class="mt-3 mb-0"><strong>Приложенные файлы: </strong></p>
+        <ul class="my-0 py-0">
+            {% for doc in record.recorddocumnent_set.all %}
+                <li>
+                <a href='{{ doc.file.url }}' class='text-decoration-none' target="_blank">{{ doc.title }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted my-3">Файлы не приложены ...</p>
+    {% endif %}
+</div>

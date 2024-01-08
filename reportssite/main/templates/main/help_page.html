@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+
+{% block title %}
+    {{ block.super }}|Помощь
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_authenticated %}
+    {% if request.user.is_staff %}
+        {% include 'inc/staff_navbar.html' %}
+    {% else %}
+        {% include 'inc/user_navbar.html' %}
+    {% endif %}
+{% else %}
+    <nav class="navbar sticky-top navbar-expand-md bg-primary" aria-label="Fourth navbar example">
+        <div class="container-fluid px-5">
+            <div><h1 class="text-white text-center text-sm-start">RENOVA</h1></div>
+            <div class="d-flex flex-wrap justify-content-center">
+                <h5><a class="nav-link text-white" href="https://renova-service.ru/">Главная</a></h5>
+                <h5><a class="nav-link text-white" href="https://renova-service.ru/#hot_line">Горячая линия</a></h5>
+            </div>
+        </div>
+    </nav>
+{% endif %}
+
+<main class="container col-10 py-4 d-flex flex-column align-items-center">
+    <div class="d-flex flex-wrap justify-content-center">
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Основной функционал с сайта</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/b36prDfsOHw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Добавление отчета</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/-_ghBxhsI-8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Проверка записи о ремонте</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/9U2ZZbzRx90" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Возврат отчета на доработку</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/Rtck_wNbqek" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Запчасти без обязательств. Часть 1</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/D4GRjQxXt9M" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Запчасти без обязательств. Часть 2</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/VkfF_VKpwJQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Перенос ремонта на следующий месяц.</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/E-bvKuZeS9o" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Загрузка платежных документов.</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/YWLFIXK6OrI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Загрузка документов к ремонту.</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/90N1kfj0j5A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Фотографии, прикаладываемые к отчету.</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/5rkOL7tMG58" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>    
+        </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Акты НРП. Часть 1.</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/IxllF0ufTJs?si=gxRSpJ2jB2TUL_zu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+        <div class="p-4">
+            <h5 class="col-12 align-items-center">Акты НРП. Часть 2.</h5>
+            <iframe width="330" height="200" src="https://www.youtube.com/embed/l6sGYrL95cE?si=OBEgb9ew-yW4xrYR" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+    </div>
+    
+    <!-- кнопка ВВЕРХ -->
+    {% include 'inc/go_to_top_button.html' %}
+</main>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

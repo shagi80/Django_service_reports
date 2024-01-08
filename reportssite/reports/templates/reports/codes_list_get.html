@@ -1,0 +1,13 @@
+<option>---------</option>
+{% for group in groups %}
+<optgroup label="{{ group }}">
+    {% for code in codes %}
+    {% if code.parent.pk == group.pk %}
+        {% if code.pk == select_id %}
+        <option selected value="{{ code.pk }}">{{ code }}</option>
+        {% else %}
+        <option value="{{ code.pk }}">{{ code }}</option>
+        {% endif %}
+    {% endif %}
+    {% endfor %}
+{% endfor %}

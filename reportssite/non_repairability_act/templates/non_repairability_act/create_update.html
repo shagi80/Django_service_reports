@@ -1,0 +1,471 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+{% load static %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% include 'inc/user_navbar.html' %}
+
+
+<div class="container col-lg-12">
+    <form method="post"  enctype="multipart/form-data" >
+        {% csrf_token %}
+
+        {{ form.center }}
+        {{ form.member_for_user }}
+
+        <!-- панель кнопок -->
+        <div class="navbar sticky-top">
+            <div class="col-12">
+                <div class="row my-5 justify-content-center justify-content-lg-between border border-secondary rounded p-1 bg-white">
+                    <h3 class="col-auto text-primary text-center text-sm-start">{{ title }}</h3>
+                    <div class="col-auto text-center text-sm-end">
+                        {% if not form.instance.status or form.instance.status.status == 'draft' or form.instance.status.status == 'refinement' %}
+                            <button type="submit" class="btn btn-outline-success" name="submit-send"><i class="bi bi-send"></i>  Отправить</button>
+                            <button type="submit" class="btn btn-outline-primary" name="submit-save"><i class="bi bi-save part_flag"></i>  Записать</button>
+                        {% endif %}
+                        {% if form.instance and form.instance.pk %} 
+                            {% if form.instance.status.status == 'draft' %}
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delete">Удалить</button>
+                            {% endif %}  
+                        {% endif %}  
+                        {% if form.instance.status.status == 'confirmed' or form.instance.status.status == 'compensated' %}
+                            <a href="{% url 'act-download' form.instance.pk %}" class="btn btn-outline-primary">
+                                <i class="bi bi-save"></i><span class="m-1">Скачать</span>
+                            </a>
+                        {% endif %}    
+                        <a href="{% url 'act-list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i>  Закрыть</a>
+                    </div>
+                    {% if form.errors %}
+                        <div class="col-12 text-center mb-2 mt-1">
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#errorModal">
+                                Есть ошибки !
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-5 justify-content-between">
+            <div class="col-lg-8">
+                {% if form.instance and form.instance.pk %} 
+                    <div class="row mb-3 bg-light p-1 border justify-content-center">
+                        <label class="col-auto colform-label">
+                            <h5>{{ form.instance.status|colored_act_status|safe }}</h5>
+                        </label>
+                        {% if form.instance.member_for_user and form.instance.status.status == 'refinement' %}
+                        <div class="text-center mb-3">
+                            <strong>{{ form.instance.member_for_user }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">
+                            <strong>Дата документа:</strong>
+                            {% if form.doc_date.errors %}
+                            {% show_record_form_field_errors form.doc_date.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.doc_date }}
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label">
+                            <strong>Вид продукции:</strong>
+                            {% if form.product.errors %}
+                            {% show_record_form_field_errors form.product.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.product }}
+                    </div>
+                    <div id="model_div" class="col-md-5"  url-data="{% url 'act-get-models' %}">
+                        <label class="form-label">
+                            <strong>Модель продукции:</strong>
+                            {% if form.model_description.errors %}
+                            {% show_record_form_field_errors form.model_description.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.model }}
+                        {{ form.model_description }}
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label">
+                            <strong>Серийный номер:</strong>
+                            {% if form.serial_number.errors %}
+                            {% show_record_form_field_errors form.serial_number.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.serial_number }}
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">
+                            <strong>Тип обращения:</strong>
+                            {% if form.work_type.errors %}
+                            {% show_record_form_field_errors form.work_type.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.work_type }}
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label">
+                            <strong>Дата продажи / дата приема в СЦ:</strong>
+                            {% if form.receipt_date.errors %}
+                            {% show_record_form_field_errors form.receipt_date.errors %}
+                            {% endif %}
+                        </label>
+                        <div class="row">
+                        <div class="col">
+                            {{ form.buy_date }}
+                        </div>
+                        <div  class="col">
+                            {{ form.receipt_date }}
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3"> 
+                    <label class="form-label">
+                        <strong>Клиент:</strong>
+                        {% if form.client.errors %}
+                        {% show_record_form_field_errors form.client.errors %}
+                        {% endif %}
+                    </label>
+                    <div class="col-md-3 mb-1 mb-mb-0 text-muted">Тип клиента</div>
+                    <div class="col-md-4 mb-1 mb-mb-0">{{ form.client_type }}</div>
+                    <div class="col-md-5 mb-1 mb-mb-0">{{ form.client_email }}</div>
+                    <div class="col-md-7 mb-1 mb-mb-0">{{ form.client }}</div>
+                    <div class="col-md-5 mb-1 mb-mb-0">{{ form.client_phone }}</div>
+                    <div>{{ form.client_addr }}</div>
+                </div>
+                <div class="row mt-3">
+                    <label class="form-label">
+                        <strong>Продавец:</strong>
+                        {% if form.shop.errors %}
+                        {% show_record_form_field_errors form.shop.errors %}
+                        {% endif %}
+                    </label>
+                    <div class="col-md-7 mb-1 mb-mb-0">{{ form.shop }}</div>
+                    <div class="col-md-5 mb-1 mb-mb-0">{{ form.shop_phone }}</div>
+                    <div>{{ form.shop_addr }}</div>
+                </div>
+                <div class="row mt-1 g-3">
+                    <div class="col-12">
+                        <label class="form-label">
+                            <strong>Заявленная неисправность:</strong>
+                            {% if form.problem_description.errors %}
+                            {% show_record_form_field_errors form.problem_description.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.problem_description }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">
+                            <strong>Фактическая неисправность:</strong>
+                            {% if form.work_description.errors %}
+                            {% show_record_form_field_errors form.work_description.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.work_description }}
+                    </div>
+                    <div id="code_div" class="col-12"  url-data="{% url 'act-get-codes' %}">
+                        <label class="form-label">
+                            <strong>Код неисправности:</strong>
+                            {% if form.code.errors %}
+                            {% show_record_form_field_errors form.code.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.code }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <strong>Заключение:</strong>
+                            {% if form.decree.errors %}
+                            {% show_record_form_field_errors form.decree.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.decree }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <strong>Местонахождение изделия:</strong>
+                            {% if form.device_location.errors %}
+                            {% show_record_form_field_errors form.device_location.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.device_location }}
+                    </div>
+                    <div class="col">
+                        <label class="form-label">
+                            <strong>Примечание:</strong>
+                            {% if form.note.errors %}
+                            {% show_record_form_field_errors form.note.errors %}
+                            {% endif %}
+                        </label>
+                        {{ form.note }}
+                    </div>
+                </div>
+            </div>
+     
+            <div class="row mt-5 col-12 col-lg-4 justify-content-center">
+                <div class="col-11 col-sm-6 col-lg-12">
+                    <div id="documents_container">
+                        <label class="form-label mb-3">
+                            <strong>Документы:</strong>
+                            {% if form.non_field_errors %}
+                            {% show_record_form_field_errors form.non_field_errors %}
+                            {% endif %}
+                        </label>
+                        {% if exist_files %}
+                            <div id="exist_files_div" class="row mb-3" url-data="{% url 'act-del-file' %}" token="{{ csrf_token }}">
+                            {% for doc in exist_files %}
+                                <div id="file-{{ doc.pk }}" class="col-11"><a href='{{ doc.file.url }}' class='text-decoration-none' target="_blank">
+                                    {{ doc.get_title_display }} №{{ doc.number }} от {{ doc.date|date:'d.m.y' }}
+                                </a></div>
+                                {% if form.instance.status.status == 'draft' or form.instance.status.status == 'refinement' %}
+                                    <div class="col-1 text-end text-danger" role="button"  file-pk="{{ doc.pk }}">x</div>   
+                                {% endif %}                         
+                            {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if not form.instance.status or form.instance.status.status == 'draft' or form.instance.status.status == 'refinement' %}
+                            {{ file_formset.management_form }}
+                            {% for file_form in file_formset %}
+                                <div class="document_form">
+                                    <div class="row justify-content-center">
+                                        <hr width="50%">
+                                        <div class="row">
+                                            <label class="col-4 form-label">Вид:</label>
+                                            <div class="col-8">{{ file_form.title }}</div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <label class="col-4 form-label">№ и дата:</label>
+                                            <div class="col-3">{{ file_form.number }}</div>
+                                            <div class="col-5">{{ file_form.date }}</div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <label class="col-4 form-label">Файл:</label>
+                                            <div class="col-8">{{ file_form.file }}</div>{{ file_form.file.errors }}
+                                        </div>
+                                        <div class="row mt-2 mb-4">
+                                            <div class="col-auto">Удалить при записи</div>
+                                            <div class="col-auto" >{{ file_form.DELETE }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    {% if not form.instance.status or form.instance.status.status == 'draft' or form.instance.status.status == 'refinement' %}
+                        <div class="col-12 row justify-content-center">
+                            <div class="col-auto">
+                                <button id="AddPart" type="button" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-plus-lg"></i> ещё файл
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>               
+            </div>
+        </div>
+    </form>
+
+    {% if form.errors %}
+    <!-- Окно ошибок -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5 text-danger" id="errorModalLabel">Ошибки в документе:</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    {% for key, val in form.errors.items %}
+                        <div class="row mx-2">
+                            <strong class="col-4">{{ key|translate_nrp_field }}</strong>
+                            <div class="col-8">{{ val }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if form.instance and form.instance.pk %}
+    <!-- Окно подтверждения удаления записи -->
+    <div class="modal fade" id="delete" tabindex="-1" aria-labelledby="deleteLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form method="POST" action="{% url 'act-user-delete' form.instance.pk %}">
+                {% csrf_token %}
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteLabel">Вы уверенны, что хотите удалить этот Акт ?</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-footer text-center">
+                        <button type="submit" class="btn btn-danger btn-sm" tabindex="-1" role="button" aria-disabled="true">
+                            Удалить
+                        </button>    
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+
+
+<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    
+    // управление доступностью виджета даты покупки в зависимости от типа ремонта
+    function SetBuyDateWgt(){
+        var val = $("#id_work_type").val();
+        if(val == "pretrading"){
+            $("#id_buy_date").prop("disabled", true)
+            $("#id_buy_date").val(null)
+        } else {
+            $("#id_buy_date").prop("disabled", false);
+        }
+    }
+
+    // подгрузка списка кодов
+    function ChangeCodeSelect(){
+        var url_code = $("#code_div").attr("url-data");
+        var productId = $("#id_product").val();
+        var codeId = $("#id_code").val();
+        
+        if (productId){
+            $.ajax({
+                url: url_code,
+                data: {'product': productId, 'select': codeId},
+                success: function (data) {
+                    $("#id_code").html(data);
+                }
+            });
+        }
+    }
+
+    // динамическое заполнение списка моделей
+    function OnChangeProduct(){
+        var url_model = $("#model_div").attr("url-data");
+        var url_code = $("#code_div").attr("url-data");
+        var productId = $("#id_product").val();
+
+        if (productId){
+            $.ajax({
+                url: url_model,
+                data: {'product': productId},
+                success: function (data) {
+                    $("#id_model").html(data);
+                    HideModelWgt();
+                }
+            });
+            ChangeCodeSelect();
+        } else {
+            $("#id_model").html('');
+            $("#id_model_description").val('');
+            HideModelWgt();
+        }
+    }
+
+    // скрытие/показ виджетов выбора модели - Select или Char
+    function HideModelWgt(){
+        if($("#id_model").find('option').length>1){
+            $("#id_model").prop("hidden", false)
+            $("#id_model").prop("disabled", false)
+            $("#id_model_description").prop("hidden", true)
+            $("#id_model_description").val("")
+        } else {
+            $("#id_model").prop("hidden", true)
+            $("#id_model").prop("disabled", true)
+            $("#id_model_description").prop("hidden", false)
+        }
+    }
+
+    // клонирование последней формы формсета
+    $("#AddPart").click(function (e){
+        e.preventDefault()
+        var form_count = $("#id_documents-TOTAL_FORMS").val();
+        var formRegex = RegExp("documents-(\\d){1}-","g")
+        $("#documents_container").append($("div.document_form:last").html().replace(formRegex, "documents-"+String(form_count)+"-"));
+        $("#id_documents-TOTAL_FORMS").val(parseInt(form_count) + 1);
+    });
+
+    // удаление существующего файла
+    $("#exist_files_div").click(function(e){
+        var url = $(this).attr("url-data");
+        var token = $(this).attr("token");
+        var pk = $(e.target).attr("file-pk");
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {'csrfmiddlewaretoken': token, 'pk': pk},
+            success: function (data) {
+                $(e.target).prop("hidden", true);
+                $('#file-'+pk).prop("hidden", true);
+            }
+        });
+    });
+
+    // скрытие/показ виджета ввода e-mail клиента
+    function show_client_email(){
+        let check = $('#id_client_type').val();
+        if (check == 'organization') {
+            $('#id_client_email').prop("disabled", false);
+        } else {
+            $('#id_client_email').prop("disabled", true);
+            $('#id_client_email').val("");
+        };
+    };
+
+    $(document).ready(function() {
+
+        //запретить отпраку формы нажатием Enter
+        $(window).keydown(function(event){
+            if(event.keyCode == 13) {
+                event.preventDefault();
+                return false;
+            }
+        });
+
+        //подключение события к полю выбора типа ремонта
+        $("#id_work_type").change(SetBuyDateWgt);
+        //заполнение Select выбора модели
+        $("#id_product").change(OnChangeProduct);
+        // скрытие/показ виджетов выбора модели - Select или Char
+        HideModelWgt();
+        // установка доступности виджера даты поркупки
+        SetBuyDateWgt();
+        // подключение событий к полю ввода типа клиента
+        show_client_email();
+        $('#id_client_type').change(show_client_email);
+
+        if($("#id_product").attr('disabled')){
+            $("#id_model").attr('disabled', true);
+            $("#id_model_description").attr('disabled', true);
+        };
+
+        ChangeCodeSelect();
+
+        $('#errorModal').modal('show');
+    });
+
+</script>
+
+{% endblock %}

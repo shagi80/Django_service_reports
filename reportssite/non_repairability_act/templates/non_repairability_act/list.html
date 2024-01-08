@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+{% load static %}
+
+{% block title %}
+    {{ block.super }}|Все акты НРП
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+    {% include 'inc/staff_navbar.html' %}
+{% else %}
+    {% include 'inc/user_navbar.html' %}
+{% endif %}
+
+
+<div class="container col-lg-12">
+    <div class="row py-4">
+        <div class="col-12"><h3>Все акты:</h3></div>
+    </div>
+
+    <div class="row g-5">
+        <div class="col-lg-4  order-lg-last">
+            <h4 class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-primary">Найдено актов</span>
+                    <span class="badge bg-primary rounded-pill">{{ obj_count }}</span>
+                </h4>
+                <form class="card p-3 shadow pb-4" method="get">
+                    <div class="row mb-1">
+                        <label class="col-xl-4 col-form-label">Поиск</label>
+                        <div class="col-8">
+                            {{ form.filter }}
+                        </div>
+                    </div>
+                    {% if request.user.is_staff %}
+                    <div class="row mb-1  align-items-center">
+                        <label class="col-xl-4 col-form-label">Сервис</label>
+                        <div class="col-xl-8">
+                            {{ form.service_center }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="row mb-1  align-items-center">
+                        <label class="col-xl-4">Статус</label>
+                        <div class="col-xl-8">
+                            {{ form.status }}
+                        </div>
+                    </div>
+                    <div class="row mb-1 align-items-center">
+                        <label class="col-xl-4 col-form-label">Отч. период</label>
+                        <div class="col-xl-5">
+                            {{ form.month }}
+                        </div>
+                        <div class="col-xl-3  align-items-center">
+                            {{ form.year }}
+                        </div>
+                    </div>
+                    <div class="container d-flex justify-content-center gap-2 mt-3">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i>
+                            выбрать
+                        </button>
+                        <a class="btn btn-outline-primary" href="{% url 'act-list' %}" role="button">
+                            <i class="bi bi-x-lg"></i>
+                            сбросить
+                        </a>
+                    </div>
+                </form>    
+        </div>
+
+        <div class="col-lg-8">
+            {% for act in acts %}
+            <div class="col mt-2 border border-dark shadow rounded pb-3" id="{{ act.pk }}">
+                <div class="card-body ">
+                    <!-- строка заголовка --> 
+                    <div class="row py-1">
+                        <h5 class="col">
+                            {{ act.center.title }} ({{ act.center.city }}) № {{ act.pk }} от {{ act.doc_date|date:"d M Y"|lower}}
+                        </h5> 
+                        <div class="col-auto">
+                            {% if request.user.is_staff %}
+                                <a href="{% url 'act-staff-detail' act.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i></i>
+                                </a> 
+                            {% else %}
+                                <a href="{% url 'act-user-update' act.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i></i>
+                                </a>   
+                            {% endif %}                            
+                        </div>
+                    </div>  
+                    <!--Статус-->
+                    <div class="row py-2">
+                        <div class="col-фгещ">
+                            {{ act.status|colored_act_status|safe }}
+                        </div>
+                    </div>
+                    <!--Продавец и клиент -->
+                    {% if act.shop or act.client %}
+                    <div class="row">
+                        {% if act.shop %}
+                        <strong class="col-sm-2 text-muted">Продавец:</strong>
+                        <div class="col-sm-4">{{ act.shop }}</div>
+                        {% endif %}
+                        {% if act.client %}
+                        <strong class="col-sm-2 text-muted">Клиент:</strong>
+                        <div class="col-sm-4">{{ act.client }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <!--Данные об изделии-->
+                    {% if act.product or act.model_description or act.serial_number %}
+                    <div class="row pb-2">                     
+                        <div class="col-sm-6">{{ act.product|default_if_none:"" }}</div>
+                        <div class="col-sm-3">{{ act.model_description|default_if_none:"" }}</div>
+                        <div class="col-sm-3">{{ act.serial_number|default_if_none:"" }}</div>
+                    </div>
+                    {% endif %}
+                    <!--Примечание-->
+                    {% if act.note %}
+                    <div class="col-12">
+                        <i class="bi bi-info-square"></i><label class="px-3">{{ act.note }}</label>
+                    </div>
+                    {% endif %}
+                    <!--Сообщение от менеджера -->
+                    {% if act.member_for_user %}
+                        {% if act.status.status == 'refinement' or request.user.is_staff %}
+                        <div class="col-12">
+                            <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3">{{ act.member_for_user }}</strong>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>              
+            </div>
+
+            {% empty %}
+                <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+            {% endfor %}
+        </div>
+    </div>
+    {% if acts %}
+        <!-- кнопка ВВЕРХ! -->
+        {% include 'inc/go_to_top_button.html' %}
+    {% endif %}
+    {% include 'inc/list_paginator.html' %}
+
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+
+
+<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+
+</script>
+
+{% endblock %}

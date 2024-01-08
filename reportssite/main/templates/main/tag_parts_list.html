@@ -1,0 +1,17 @@
+<div class="row g-1">
+    {% for part in parts %}
+        {% if part.order_date %}
+            <label class="col-xl-8">
+                <i class="bi bi-envelope-check-fill"></i>
+                <span class='pl-1'>{{ part.title|truncatewords:5 }}</span>
+            </label>
+        {% else %}
+            <label class="col-xl-8">{{ part.title|truncatewords:5 }}</label>
+        {% endif %}
+    {% if part.price and part.price != 0 %}
+    <label class="col-xl-4">{{ part.count }} X {{ part.price }}</label>
+    {% else %}
+    <label class="col-xl-4">{{ part.count }} шт</label>
+    {% endif %}
+    {% endfor %}
+</div>

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+{% include 'inc/staff_navbar.html' %}
+{% else %}
+{% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container">
+    <main>
+        <div class="row py-4 justify-content-between">
+            <div class="col-7">
+                <h3>{{ title }}<label class="text-muted">{{ center.title }}</label></h3>
+            </div>
+            <div class="col-5 text-end">
+                {% if request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                    {% if center %}
+                    <a class="btn btn-primary" href="{% url 'centerprice_add_page' 0 center.pk %}" role="button">
+                        Добавить индивидуальную расценку
+                    </a>
+                    {% else %}
+                    <a class="btn btn-primary" href="{% url 'centerprice_add_page'%}" role="button">
+                        Добавить индивидуальную расценку
+                    </a>
+                    <a class="btn btn-primary" href="{% url 'code_add_page' %}" role="button">
+                        Добавить код
+                    </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-5">
+            <!-- список продуктов --!>
+            {% show_products_list products %}
+            <!-- вывод кодов --!>
+            <div class="col-lg-9">
+                <!-- общие коды --!>
+               <div class="container mb-3" id="Item-0">
+                    <diw class="row bg-light justify-content-between">
+                        <div class="col-auto">
+                            <h5>Общие коды</h5>
+                        </div>
+                        <div class="col-auto">
+                            <a data-bs-toggle="collapse" href="#collapse-0" aria-expanded="false" aria-controls="collapseExample">
+                                <i class="bi bi-arrow-down-up"></i>
+                            </a>
+                        </div>
+                    </diw>
+                    <div class="row collapse show" id="collapse-0">
+                        <hr>
+                        {% show_code_for_product request.user None center %}
+                    </div>
+                </div>
+                <!-- по типам продукции -->
+                {% for product in products %}
+                <div class="container mb-3" id="Item-{{ forloop.counter }}">
+                    <diw class="row bg-light justify-content-between">
+                        <div class="col-auto">
+                            <h5>{{ product.title }}</h5>
+                        </div>
+                        <div class="col-auto">
+                            <a data-bs-toggle="collapse" href="#collapse-{{ forloop.counter }}" aria-expanded="false" aria-controls="collapseExample">
+                                <i class="bi bi-arrow-down-up"></i>
+                            </a>
+                        </div>
+                    </diw>
+                    <div class="row collapse show" id="collapse-{{ forloop.counter }}">
+                        <hr>
+                        {% show_code_for_product request.user  product center %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- кнопка ВВЕРХ --!>
+        {% include 'inc/go_to_top_button.html' %}
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}
