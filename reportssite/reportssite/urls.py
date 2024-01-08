@@ -3,7 +3,11 @@ from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
-from django.views.defaults import server_error, page_not_found, permission_denied
+from django.views.defaults import (
+    server_error,
+    page_not_found,
+    permission_denied,
+)
 
 
 handler403 = partial(permission_denied, template_name='errs/403.html')
@@ -21,6 +25,3 @@ urlpatterns = [
     path('upload/', include('upload.urls')),
     path('act/', include('non_repairability_act.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
-
