@@ -376,9 +376,12 @@
                     {% if report.user == request.user %}
                         {% if report.status == 'draft' or report.status == 'refinement' %}
                             <div class="col-md-auto text-md-end">
-                                <a href="{% url 'record_add_page' report.pk %}" class="btn btn-outline-primary btn-sm btn-sm">
+                                <a href="{% url 'record_add_page' report.pk %}" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-plus-lg"></i><span class='m-1'>Добавить запись</span>
                                 </a>
+                                <button id="addActsBtn" acts-url="{% url 'get-acts' %}" report-pk="{{ report.pk }}" type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#actsModal">
+                                    <i class="bi bi-plus-lg"></i><span class='m-1'>Добавить из акта НРП</span>
+                                </button>
                             </div>
                         {% endif %}
                     {% endif %}
@@ -552,10 +555,28 @@
                     </form>
                 </div>
             </div>
-        </div>
-               
+        </div>              
         {% endfor %}
     </div>
+
+    
+    <!-- Окно выбора акта НРП -->
+    <div class="modal fade" id="actsModal" tabindex="-1" aria-labelledby="actsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="actsModalLabel">Выбор акта НРП</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div id="actsModalBody" class="modal-body">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% if records %}
     <!-- кнопка ВВЕРХ -->
     {% include 'inc/go_to_top_button.html' %}
@@ -595,6 +616,20 @@
                 $('#can_not_send_modal').show();
             }
         }
+        });
+    });
+
+    // подгрузка актов НРП
+    $('#addActsBtn').click(function(){
+        var url = $(this).attr("acts-url");
+        var reportPk = $(this).attr("report-pk");
+        
+        $.ajax({
+            url: url,
+            data: {'report_pk': reportPk},
+            success: function (data) {
+                $('#actsModalBody').html(data);
+            }
         });
     });
 </script>

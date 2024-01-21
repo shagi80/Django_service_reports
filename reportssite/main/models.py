@@ -1,6 +1,4 @@
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.db import models
 
 
@@ -30,15 +28,14 @@ def get_service_center(self):
         return None
 
 
-
 User.add_to_class("__str__", get_name)
 
 User.add_to_class("service_center", get_service_center)
 
 
-
 # модель для записи действий пользователей
-# взято отсюда: https://webdevblog.ru/logirovanie-izmeneniya-dannyh-v-modelyah-django/
+# взято отсюда:
+# https://webdevblog.ru/logirovanie-izmeneniya-dannyh-v-modelyah-django/
 
 ACTION_CREATE = 'create'
 ACTION_UPDATE = 'update'
@@ -73,13 +70,37 @@ TYPE_ACTION_ON_MODEL = (
 
 
 class ChangeLogs(models.Model):
-    changed = models.DateTimeField(auto_now=True, verbose_name=u'Дата/время изменения')
-    model = models.CharField(choices=TYPE_MODEL, max_length=255, verbose_name=u'Таблица', null=True)
+    changed = models.DateTimeField(
+        auto_now=True,
+        verbose_name=u'Дата/время изменения'
+        )
+    model = models.CharField(
+        choices=TYPE_MODEL,
+        max_length=255,
+        verbose_name=u'Таблица',
+        null=True
+        )
     record_id = models.IntegerField(verbose_name=u'ID записи', null=True)
-    user = models.ForeignKey(User, verbose_name=u'Автор изменения', on_delete=models.CASCADE, null=True)
-    action_on_model = models.CharField(choices=TYPE_ACTION_ON_MODEL, max_length=50, verbose_name=u'Действие', null=True)
-    data = models.JSONField(verbose_name=u'Изменяемые данные модели', default=dict)
-    ipaddress = models.CharField(max_length=15, verbose_name=u'IP адресс', null=True)
+    user = models.ForeignKey(
+        User,
+        verbose_name=u'Автор изменения',
+        on_delete=models.CASCADE, null=True
+        )
+    action_on_model = models.CharField(
+        choices=TYPE_ACTION_ON_MODEL,
+        max_length=50,
+        verbose_name=u'Действие',
+        null=True
+        )
+    data = models.JSONField(
+        verbose_name=u'Изменяемые данные модели',
+        default=dict
+        )
+    ipaddress = models.CharField(
+        max_length=15,
+        verbose_name=u'IP адресс',
+        null=True
+        )
 
     class Meta:
         ordering = ('-changed',)
@@ -91,7 +112,7 @@ class ChangeLogs(models.Model):
 
     @classmethod
     def add(cls, instance, user, ipaddress, action_on_model, data, id=None):
-        #Создание записи в журнале регистрации изменений
+        # Создание записи в журнале регистрации изменений
         log = ChangeLogs.objects.get(id=id) if id else ChangeLogs()
         log.model = instance.__class__.__name__
         log.record_id = instance.pk

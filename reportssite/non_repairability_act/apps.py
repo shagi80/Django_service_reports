@@ -8,5 +8,5 @@ class NonRepairabilityActConfig(AppConfig):
 
     def ready(self):
         import non_repairability_act.signals
-        return super().ready()
 
+        return super().ready()

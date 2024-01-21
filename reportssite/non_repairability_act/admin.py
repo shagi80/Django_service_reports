@@ -19,7 +19,14 @@ class ActMemberAdmin(admin.ModelAdmin):
 
 @admin.register(models.NonRepairabilityAct)
 class ActAdmin(admin.ModelAdmin):
-    list_display = ('id', 'doc_date', 'center', 'product', 'model_description', 'serial_number')
+    list_display = (
+        'id',
+        'doc_date',
+        'center',
+        'product',
+        'model_description',
+        'serial_number',
+    )
     list_display_links = ('doc_date', 'center')
     search_fields = ['center__title', 'serial_number']
 

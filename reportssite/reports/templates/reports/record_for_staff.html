@@ -24,6 +24,17 @@
                         {{ record.report.service_center }} за {{ record.report.report_date|date:"F Y"|lower }}
                     </h3>
                     <div style="font-size:0.8rem" class="text-muted">Номер записи: {{ record.pk }}</div>
+                    {% if record.parent_act %}
+                    <div class="row" style="font-size:0.8rem">
+                        <label class="form-label">
+                            <strong>Создан на основании </strong>
+                            <a href="{% url 'act-staff-detail' record.parent_act.pk  %}" style="text-decoration: none;">
+                                Акт НРП № {{ record.parent_act }}
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </label>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="col-sm-2">
                     {% if record.verified %}

@@ -83,6 +83,7 @@
         {% endif %}
 
         {{ form.report }}
+
         <div hidden>{{ form.remarks }}</div>
 
         <!-- Окно некритичных ошибок -->
@@ -112,6 +113,19 @@
                     </div>
                 </div>
             </div>
+        </div>
+        {% endif %}
+
+        {{ form.parent_act }}
+        {% if form.parent_act.value %}
+        <div class="row mt-3">
+            <label class="form-label">
+                <strong>Создан на основании </strong>
+                <a href="{% url 'act-user-update' form.parent_act.value  %}" style="text-decoration: none;">
+                    Акт НРП № {{ form.parent_act.value }}
+                    <i class="bi bi-eye"></i>
+                </a>
+            </label>
         </div>
         {% endif %}
 
@@ -154,7 +168,7 @@
                 {{ form.serial_number }}
             </div>
         </div>
-        
+    
         <div class="row mt-2">
             <div class="col-lg-8">
                 <!--Информация о клиенте и даты-->
