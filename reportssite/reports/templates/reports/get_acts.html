@@ -1,0 +1,28 @@
+{% if acts %}
+    <h5>Подтвержденные акты НРП:</h5>
+    {% for act in acts %}
+        <div class="card text-dark bg-light border border-dark ro shadow mb-3">
+            <div class="card-header row justify-content-between">
+                <div class="col-auto">Акт №{{ act.pk }} от {{ act.doc_date }}</div>
+                <div class="col-auto">
+                    <a href="{% url 'record_add_page' reportPk act.pk %}" class="btn btn-outline-primary btn-sm">
+                        выбрать
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6 class="card-title my-0">
+                    {{ act.product__title }} {{ act.model_description }} {{ act.serial_number }}
+                </h6>
+                {% if act.client %}
+                    <p class="card-text my-0">Клшиент: {{ act.client }}</p>
+                {% endif %}
+                {% if act.shop %}
+                    <p class="card-text my-0">Продавец: {{ act.shop }}</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <h5 class="text-center">У вас нет подтвержденных актов НРП !</h5>
+{% endif %}
