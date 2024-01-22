@@ -48,14 +48,9 @@
                     <div class="col-12 col-sm-3 text-muted">Ремонты</div>
                     <div class="row col-12 col-sm-9">
                     {% for repair in act.repairs %}
-                        <div class="col-11">
+                        <div class="col-12">
                             <div>{{ repair.report__service_center__title }} ({{ repair.report__service_center__city }}), {{ repair.end_date }}</div>
                             <div>{{ repair.code__code }} {{ repair.code__title }}</div>
-                        </div>
-                        <div class="col-1">
-                            <button class="btn btn-outline-secondary btn-sm"><a href='{% url "record-for-staff" pk=repair.pk %}'>
-                                <i class="bi bi-eye"></i>
-                            </a></button>
                         </div>
                     {% endfor %}
                     </div>
@@ -102,10 +97,6 @@
                 <div class="col-12 col-sm-9">{{ act.get_device_location_display }}</div>
                 {% else %}
                 <div class="col-12 col-sm-9"><strong class="text-danger">местнахождение не определено !</strong></div>
-                {% endif %}
-                {% if act.note %}
-                    <div class="col-12 col-sm-3 text-muted">Примечание</div>
-                    <div class="col-12 col-sm-9 text-danger">{{ act.note }}</div>
                 {% endif %}
             </div>
             <!-- Файлы и Итог -->
