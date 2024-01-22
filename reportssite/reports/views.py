@@ -36,7 +36,7 @@ from mail.views import (
     mail_message_for_center,
 )
 
-from main.business_logic import GetPrices
+from main.business_logic import GetPrices, STATUS_ACCEPTED, STATUS_PAYMENT
 from reportssite.settings import DEBUG
 from non_repairability_act.models import NonRepairabilityAct, ActStatus
 
