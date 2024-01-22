@@ -1,20 +1,20 @@
 import datetime
-from typing import Any
 from django import forms
 from django.forms import inlineformset_factory
-from django.db import models
 from django.contrib.auth.models import User
 
 from servicecentres.models import ServiceCenters
 from main.business_logic import MONTH_CHOICES, YEAR_CHOICES
 from products.models import Models, Codes
 from main.business_logic import normalize_string
-from . import models
+from non_repairability_act.models import (
+    NonRepairabilityAct, ActDocumnent, ActStatus
+    )
 
 
 class ActEditForm(forms.ModelForm):
     class Meta:
-        model = models.NonRepairabilityAct
+        model = NonRepairabilityAct
         fields = '__all__'
         widgets = {
             'model_description': forms.TextInput(
@@ -139,8 +139,8 @@ class ActEditForm(forms.ModelForm):
 
         self.fields['model'].queryset = Models.objects.none()
         self.fields['code'].queryset = Codes.objects.none()
-        # раз по умолчанию в полях пусто - надо создать списки допустимых значений
-        # иначе будет ошибка валидации
+        # раз по умолчанию в полях пусто - надо создать списки допустимых
+        # значений иначе будет ошибка валидации
         if 'product' in self.data and self.data.get('product'):
             product_id = int(self.data.get('product'))
             self.fields['model'].queryset = Models.objects.filter(
@@ -168,8 +168,8 @@ class ActEditForm(forms.ModelForm):
 
 
 ActFileFormset = inlineformset_factory(
-    models.NonRepairabilityAct,
-    models.ActDocumnent,
+    NonRepairabilityAct,
+    ActDocumnent,
     extra=1,
     fields='__all__',
     widgets={
@@ -234,7 +234,7 @@ class ActsFilterForm(forms.Form):
         choices=[
             ('', 'все статусы ...'),
         ]
-        + models.ActStatus.choices,
+        + ActStatus.choices,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select form-select-sm'}),
     )
