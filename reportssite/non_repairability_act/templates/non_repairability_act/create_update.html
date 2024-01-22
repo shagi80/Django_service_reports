@@ -339,7 +339,7 @@
             $("#id_buy_date").prop("disabled", true)
             $("#id_buy_date").val(null)
         } else {
-            $("#id_buy_date").prop("disabled", false);
+            $("#id_buy_date").prop("disabled", ($("#id_work_type").prop('disabled')));
         }
     }
 
