@@ -29,28 +29,31 @@
             </div>
             <div class="row h6 d-none d-sm-flex">
                 <div class="col-sm-4">Отчет</div>
+                <div class="col-sm-1">Ремонты</div>
                 <div class="col-sm-1">За детали</div>
                 <div class="col-sm-1">За выезд</div>
                 <div class="col-sm-1">За работы</div>
                 <div class="col-sm-1">Итого</div>
-                <div class="col-sm-4">Акт и счет</div>
+                <div class="col-sm-3">Акт и счет</div>
             </div>
             {% for report in reports %}
                 <div class="row d-none d-sm-flex">
                     <div class="col-sm-4">{{ report }}</div>
+                    <div class="col-sm-1">{{ report.records_count }}</div>
                     <div class="col-sm-1">{{ report.total_part }}</div>
                     <div class="col-sm-1">{{ report.total_move }}</div>
                     <div class="col-sm-1">{{ report.total_work }}</div>
                     <div class="col-sm-1">{{ report.total_cost }}</div>
-                    <div class="col-sm-4">{{ report.get_report_documents }}</div>
+                    <div class="col-sm-3">{{ report.get_report_documents }}</div>
                 </div>
                 <div class="row d-sm-none mt-3">
                     <div class="col-sm-4 h5">{{ report }}</div>
+                    <div class="col-sm-1"><span class='h6'>Ремонты: </span>{{ report.records_count }} руб</div>
                     <div class="col-sm-1"><span class='h6'>За детали: </span>{{ report.total_part }} руб</div>
                     <div class="col-sm-1"><span class='h6'>За выезд: </span>{{ report.total_move }} руб</div>
                     <div class="col-sm-1"><span class='h6'>За работы: </span>{{ report.total_work }} руб</div>
                     <div class="col-sm-1"><span class='h6'>Итого: </span>{{ report.total_cost }} руб</div>
-                    <div class="col-sm-4"><span class='h6'>Акт и счет: </span>...</div>
+                    <div class="col-sm-3"><span class='h6'>Акт и счет: </span>...</div>
                 </div>
             {% endfor %}
             <!-- кнопка ВВЕРХ! -->

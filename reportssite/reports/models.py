@@ -87,8 +87,8 @@ class Reports(ChangeloggableMixin, models.Model):
 
     def __str__(self):
         date = self.report_date
-        return f'{self.service_center.title} за\
-              {MONTH_CHOICES[date.month-1][1]}{date.strftime(" %Y")} года'
+        return (f'{self.service_center.title} за'
+                f'{MONTH_CHOICES[date.month-1][1]}{date.strftime(" %Y")} года')
 
     def get_report_month(self):
         return ' '.join(
@@ -112,8 +112,8 @@ class Reports(ChangeloggableMixin, models.Model):
         docs = self.reportdocumnent_set.filter(title__in=['act', 'invoice'])
         text = ''
         for doc in docs:
-            text = f'{text} {doc.get_title_display()}\
-                  №{doc.number} от {str(doc.date)},'
+            text = (f'{text} {doc.get_title_display()} '
+                    f'№{doc.number} от {str(doc.date)},')
         return text[:-1] if text else '...'
 
 
@@ -356,8 +356,8 @@ def report_pre_save(sender, instance, **kwargs):
             instance.status = 'verified'
             email = instance.service_center.user.email
             if email:
-                note = '\nПожалуйста, подгрузите скан копии Акта и\
-                      Счета к вашему отчету на сайте.'
+                note = '\nПожалуйста, подгрузите скан копии Акта и '\
+                      + 'Счета к вашему отчету на сайте.'
                 note = (
                     note + '\nЭто позволит нам оплатить ваши услуги быстрее.'
                 )

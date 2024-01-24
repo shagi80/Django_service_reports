@@ -1,7 +1,6 @@
 """ представления модуля статистики """
 import csv
 
-
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
@@ -105,7 +104,7 @@ def export_sum_for_payment(request):
     headerStyle = xlwt.easyxf('font: bold off, color black; borders: left thin, right thin, top thin, bottom thin;\
      pattern: pattern solid, fore_color white, fore_colour gray25; align: horiz center, vert top;')
     headerStyle.alignment.wrap = 1
-    columns = ['№',  'Отчет', 'За детали', 'За выезд', 'За работы', 'Итого', 'Акт и счет']
+    columns = ['№',  'Отчет', 'Ремонты', 'За детали', 'За выезд', 'За работы', 'Итого', 'Акт и счет']
     for col_num in range(len(columns)):
         workSheet.write(row_num, col_num, columns[col_num], headerStyle)
 
@@ -120,15 +119,17 @@ def export_sum_for_payment(request):
         workSheet.col(1).width = 15000
         workSheet.write(row_num, 1, report.__str__(), style)
         workSheet.col(2).width = 3000
-        workSheet.write(row_num, 2, report.total_part, style)
+        workSheet.write(row_num, 2, report.records_count, style)
         workSheet.col(3).width = 3000
-        workSheet.write(row_num, 3, report.total_move, style)
+        workSheet.write(row_num, 3, report.total_part, style)
         workSheet.col(4).width = 3000
-        workSheet.write(row_num, 4, report.total_work, style)
+        workSheet.write(row_num, 4, report.total_move, style)
         workSheet.col(5).width = 3000
-        workSheet.write(row_num, 5, report.total_cost, style)
-        workSheet.col(6).width = 20000
-        workSheet.write(row_num, 6, report.get_report_documents(), style)
+        workSheet.write(row_num, 5, report.total_work, style)
+        workSheet.col(6).width = 3000
+        workSheet.write(row_num, 6, report.total_cost, style)
+        workSheet.col(7).width = 20000
+        workSheet.write(row_num, 7, report.get_report_documents(), style)
 
     workBook.save(response)
     return response
@@ -151,7 +152,8 @@ def export_sum_for_payment_to_csv(request):
     for report in reports:
         act = report.reportdocumnent_set.filter(title='act').first()
         row = [report.service_center.code, report.service_center.title,
-               report.total_part, report.total_move, report.total_work
+               report.records_count, report.total_part, report.total_move,
+               report.total_work
                ]
         if act:
             row.extend([act.number, act.date.strftime("%d.%m.%Y"),])
