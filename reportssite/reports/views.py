@@ -372,8 +372,6 @@ class GetNonRepairabilityAct(LoginRequiredMixin, UserMixin, View):
             center=request.user.service_center(),
             child_record__isnull=True
             )
-        for act in acts:
-            print(act.child_record)
         id = [
                 act.id
                 for act in acts
@@ -678,7 +676,6 @@ class RecordView(View):
                 return self.form_invalid(form)
             else:
                 # только этот кусок кода выполняется если все хорошо и можно записывать
-                print(form.cleaned_data)
                 messages.success(self.request, self.success_message)
                 form.save()
                 parts_formset.save()
