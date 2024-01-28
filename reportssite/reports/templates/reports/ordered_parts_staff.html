@@ -76,12 +76,17 @@
                                 </div>
                                 {% if request.user.pk == center.staff_user or request.user.pk == center.region__staff_user or request.user.is_superuser %}                                   
                                     <div class='col-md-2 justify-content-md-end p-3 d-flex gap-2 align-items-start'>
+                                        <!-- Кнопка выгрузки заказа -->
                                         <a  role="button" class="btn btn-outline-primary" href="{% url 'parts-to-xls' center.pk %}" role="button">
                                             <i class="bi bi-download"></i>
                                         </a>
-                                        <!-- Кнопка-триггер модального окна -->
+                                        <!-- Кнопка-триггер модального окна Отправки -->
                                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#sendModal{{ center.pk }}">
                                             <i class="bi bi-box2"></i>
+                                        </button>
+                                        <!-- Кнопка печати этикетки -->
+                                        <button type="submit" name='print_label' class="btn btn-outline-primary">
+                                            <i class="bi bi-printer"></i>
                                         </button>
                                     </div>
                                 {% endif %}
@@ -156,13 +161,13 @@
                                         <div class="row mt-2 align-items-center">
                                             <label class="col-4">№ отправления:</label>
                                             <div class="col-7">
-                                                <input type="Text" required class="form-control form-control-sm" name="number">
+                                                <input type="Text" class="form-control form-control-sm" name="number">
                                             </div>
                                         </div>
                                         <div class="row mt-2 align-items-center">
                                             <label class="col-4">Дата отправки:</label>
                                             <div class="col-4">
-                                                <input type="Date" required class="form-control form-control-sm" name="send_date">
+                                                <input type="Date" class="form-control form-control-sm" name="send_date">
                                             </div>
                                         </div>
                                     </div>
@@ -173,7 +178,7 @@
                                     <div class="modalButtonsSpin modal-footer justify-content-center" style="display:none;">
                                         <div class="spinner-border" role="status">
                                         </div>
-                                        <strong class="text-danger">пожалуйста, подождите ...</strong>
+                                        <strong class="text-danger">Пожалуйста, подождите ...</strong>
                                     </div>
                                 </div>
                                 </div>

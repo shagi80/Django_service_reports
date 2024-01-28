@@ -15,7 +15,7 @@ from reportlab.platypus import (
 )
 from reportlab.graphics import shapes
 
-from reportssite.settings import MEDIA_ROOT, STATIC_ROOT
+from reportssite.settings import MEDIA_ROOT
 
 
 def registrer_arial():

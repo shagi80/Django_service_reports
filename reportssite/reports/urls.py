@@ -94,5 +94,5 @@ urlpatterns = [
     ),
     path('accept-all/', accept_all, name='accept-all'),
     path('get-record-data/', getRecordData, name='get-record-data'),
-    path('get-acts', GetNonRepairabilityAct.as_view(), name='get-acts')
+    path('get-acts', GetNonRepairabilityAct.as_view(), name='get-acts'),
 ]

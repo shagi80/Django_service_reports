@@ -39,6 +39,7 @@ from mail.views import (
 from main.business_logic import GetPrices, STATUS_ACCEPTED, STATUS_PAYMENT
 from reportssite.settings import DEBUG
 from non_repairability_act.models import NonRepairabilityAct, ActStatus
+from reports.pdf_generator import order_part_blank
 
 
 # -------------------------- ОТПРАКА ПОЧТЫ -------------------------------
@@ -1230,24 +1231,65 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
 
 @user_passes_test(staff_validation)
 def SendParts(request):
+    """ Обработка формы на странице списка заказов деталей """
+
+    def GetPartOrderPdf(parts_pk):
+        """ Подготовка Pdf файла этикетки """
+        center_pk = ReportsParts.objects.get(pk=parts_pk[0]).\
+                        record.report.service_center.pk
+        order_data = [
+            {
+                'center': center_pk,
+                'parts': parts_pk
+            }
+        ]
+        buffer = order_part_blank(order_data)
+        response = HttpResponse(content_type='application/pdf')
+        response[
+            'Content-Disposition'
+        ] = f'attachment; filename=renova_nrp_title_{1}.pdf'
+        response.write(buffer.getvalue())
+        buffer.close()
+        return response
+
+    def SaveSendPartsData(parts_pk, send_date, number):
+        """ Запись данных от отправке деталей """
+        parts = ReportsParts.objects.filter(pk__in=parts_pk)
+        for part in parts:
+            part.send_date = send_date
+            part.send_number = number
+            part.save()
+        mail_send_parts(parts)
 
     if request.method == 'POST':
         # создаем список кллючей таблицы Parts из параметров запроса
-        parts_pk = []
-        for key in request.POST.keys():
-            if key.find('part') == 0:
-                parts_pk.append(int(key.replace('part', '')))
-        if parts_pk:
-            # если список не пуст записываем параметры отправки для деталей по списку
-            parts = ReportsParts.objects.filter(pk__in=parts_pk)
-            for part in parts:
-                part.send_date = request.POST['send_date']
-                part.send_number = request.POST['number']
-                part.save()
-            mail_send_parts(parts)
-            messages.success(request, 'Данные об отправке записаны !')
-        else:
+        parts_pk = [
+            int(key.replace('part', ''))
+            for key in request.POST.keys() if key.find('part') == 0
+        ]
+        if not parts_pk:
             messages.error(request, 'Ни одна деталь не выбрана !')
+            return redirect('staff-ordered-parts')
+        # если список не пуст определеям режим работы
+        if 'print_label' in request.POST:
+            # Режим - печать ярлыка
+            return GetPartOrderPdf(parts_pk)
+        else:
+            # Режим - запись данных об отрправке
+            # Проверяем заполнение формы
+            if not request.POST['number']:
+                messages.error(request, 'Не указан номер отправления !')
+                return redirect('staff-ordered-parts')
+            if not request.POST['send_date']:
+                messages.error(request, 'Не указана дата отправки !')
+                return redirect('staff-ordered-parts')
+            # Записываем данные об отправке
+            SaveSendPartsData(
+                parts_pk,
+                request.POST['send_date'],
+                request.POST['number']
+            )
+            messages.success(request, 'Данные об отправке записаны !')
 
     return redirect('staff-ordered-parts')
 
