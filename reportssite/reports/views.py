@@ -1244,7 +1244,7 @@ def SendParts(request):
         response = HttpResponse(content_type='application/pdf')
         response[
             'Content-Disposition'
-        ] = f'attachment; filename=renova_nrp_title_{1}.pdf'
+        ] = f'attachment; filename=renova_part_orders_for_{center_pk}.pdf'
         response.write(buffer.getvalue())
         buffer.close()
         return response

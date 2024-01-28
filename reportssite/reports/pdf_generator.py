@@ -134,7 +134,7 @@ def order_part_blank(order_data):
         rightMargin=margin,
         topMargin=margin,
         bottomMargin=margin,
-        title=f'renova_nrp_{1}',
+        title='renova_ordes',
         author='renova-service.ru',
     )
 
