@@ -70,12 +70,12 @@
                         <form id="{{ center.pk }}" class="row justify-content-center border p-3 border border-dark rounded shadow" method="POST" action='{% url "send-parts" %}'>
                             {% csrf_token %}
                             <div class="row  justify-content-between bg-light border border-secondary mb-3">
-                                <div class='col-md-10'>
+                                <div class='col-md-9'>
                                     <h5 class="mb-0 mt-2">{{ center.title }} ({{ center.region__title }})</h5>
                                     <div class="mb-2">Адрес: {{ center.post_addr }}</div>
                                 </div>
                                 {% if request.user.pk == center.staff_user or request.user.pk == center.region__staff_user or request.user.is_superuser %}                                   
-                                    <div class='col-md-2 justify-content-md-end p-3 d-flex gap-2 align-items-start'>
+                                    <div class='col-md-3 justify-content-md-end p-3 d-flex gap-2 align-items-start'>
                                         <!-- Кнопка выгрузки заказа -->
                                         <a  role="button" class="btn btn-outline-primary" href="{% url 'parts-to-xls' center.pk %}" role="button">
                                             <i class="bi bi-download"></i>
