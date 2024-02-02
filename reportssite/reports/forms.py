@@ -147,16 +147,16 @@ class RecordForm(forms.ModelForm):
                 self.fields['model_description'].disabled = True
                 self.fields['work_type'].disabled = True
                 self.fields['serial_number'].disabled = True
-                self.fields['client_type'].disabled = bool(self.instance.client_type)
-                self.fields['client'].disabled = bool(self.instance.client)
-                self.fields['client_phone'].disabled = bool(self.instance.client_phone)
-                self.fields['client_addr'].disabled = bool(self.instance.client_addr)
-                self.fields['client_email'].disabled = bool(self.instance.client_email)
-                self.fields['buy_date'].disabled = (
-                    bool(self.instance.buy_date)
-                    or self.instance.work_type != 'warranty'
-                )
-                self.fields['start_date'].disabled = bool(self.instance.start_date)
+                # self.fields['client_type'].disabled = bool(self.instance.client_type)
+                # self.fields['client'].disabled = bool(self.instance.client)
+                # self.fields['client_phone'].disabled = bool(self.instance.client_phone)
+                # self.fields['client_addr'].disabled = bool(self.instance.client_addr)
+                # self.fields['client_email'].disabled = bool(self.instance.client_email)
+                # self.fields['buy_date'].disabled = (
+                #     bool(self.instance.buy_date)
+                #     or self.instance.work_type != 'warranty'
+                # )
+                # self.fields['start_date'].disabled = bool(self.instance.start_date)
                 self.fields['order_parts'].disabled = True
 
         # это нужно что бы по умолчанию в полях было пусто
