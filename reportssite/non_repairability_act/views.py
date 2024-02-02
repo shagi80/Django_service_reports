@@ -162,12 +162,12 @@ class GetCodeView(LoginRequiredMixin, ProcessFormView):
                 else None
             )
             codes = Codes.objects.filter(
-                Q(product_id=product_id) | Q(product_id=None),
+                product_id=product_id,
                 is_folder=False,
                 is_active=True,
             ).order_by('code')
             groups = Codes.objects.filter(
-                Q(product_id=product_id) | Q(product_id=None),
+                product_id=product_id,
                 is_folder=True,
                 is_active=True,
             ).order_by('code')
