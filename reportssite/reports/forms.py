@@ -145,7 +145,7 @@ class RecordForm(forms.ModelForm):
                 self.fields['product'].disabled = True
                 self.fields['model'].disabled = True
                 self.fields['model_description'].disabled = True
-                self.fields['work_type'].disabled = True
+                # self.fields['work_type'].disabled = True
                 self.fields['serial_number'].disabled = True
                 # self.fields['client_type'].disabled = bool(self.instance.client_type)
                 # self.fields['client'].disabled = bool(self.instance.client)
