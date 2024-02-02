@@ -46,13 +46,11 @@ function HideModelWgt(){
 function SetNuyDateWgt(){
     var val = $("#id_work_type").val();
     if(val == "pretrading"){
-        $("#id_buy_date").prop("disabled", true)
-        $("#id_buy_date").val(null)
+            $("#id_buy_date").prop("disabled", true)
+            $("#id_buy_date").val(null)
+        }else{
+            $("#id_buy_date").prop("disabled", false);
         }
-        else{
-            var edit_model = $("#id_model_description").prop("disabled")
-            $("#id_buy_date").prop("disabled", edit_model);
-            }
 }
 
 //подсчет общей суммы
