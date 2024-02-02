@@ -39,7 +39,7 @@ from mail.views import (
 from main.business_logic import GetPrices, STATUS_ACCEPTED, STATUS_PAYMENT
 from reportssite.settings import DEBUG
 from non_repairability_act.models import NonRepairabilityAct, ActStatus
-from reports.pdf_generator import order_part_blank
+from reports.export import order_part_blank, report_xls
 
 
 # -------------------------- ОТПРАКА ПОЧТЫ -------------------------------
@@ -132,8 +132,6 @@ LoginRequiredMixin, UserMixin, ListView):
 @user_passes_test(user_validation)
 def export_report_xls(request, report_pk):
     report = get_object_or_404(Reports, pk=report_pk)
-    report_date = report.get_report_month()
-
     response = HttpResponse(content_type='application/ms-excel')
     disp = (
         'attachment; filename="Report of '
@@ -141,116 +139,7 @@ def export_report_xls(request, report_pk):
         + ' .xls"'
     )
     response['Content-Disposition'] = disp
-    workBook = xlwt.Workbook(encoding='utf-8')
-    workSheet = workBook.add_sheet(report_date)
-
-    # Sheet header, first row
-    boldStyle = xlwt.XFStyle()
-    boldStyle.font.bold = True
-    row_num = 0
-    workSheet.write(
-        row_num,
-        0,
-        f'Статистическая таблица за {report_date}. {report.service_center}',
-        boldStyle,
-    )
-
-    # Table header, third row
-    row_num = 2
-    workSheet.row(row_num).height = 600
-    headerStyle = xlwt.easyxf(
-        'font: bold off, color black; borders: left thin, right thin,\
-              top thin, bottom thin;  pattern: pattern solid, fore_color\
-                  white, fore_colour gray25; align: horiz center, vert top;'
-    )
-    headerStyle.alignment.wrap = 1
-    columns = [
-        '№',
-        'Клиент',
-        'Адрес',
-        'Телефон',
-        'Модель',
-        'Серийный номер',
-        'Дата продажи',
-        'Дата приема',
-        'Дата ремонта',
-        'Описание датали',
-        'Цена детали',
-        'Кол-во штук',
-        'Номер накладной',
-        'Выезд',
-        'За работы',
-        'Заявленный дефект',
-        'Описание работ',
-        'Код неисправности',
-    ]
-    for col_num in range(len(columns)):
-        workSheet.write(row_num, col_num, columns[col_num], headerStyle)
-
-    # Sheet body, remaining rows
-    style = xlwt.XFStyle()
-    records = ReportsRecords.objects.filter(report=report)
-    row_num_str = 0
-    for record in records:
-        row_num += 1
-        row_num_str += 1
-        workSheet.col(0).width = 1000
-        workSheet.write(row_num, 0, str(row_num_str), style)
-        workSheet.col(1).width = 5000
-        workSheet.write(row_num, 1, record.client, style)
-        workSheet.write(row_num, 2, record.client_addr, style)
-        workSheet.write(row_num, 3, record.client_phone, style)
-        workSheet.col(4).width = 5000
-        workSheet.write(row_num, 4, record.model_description, style)
-        workSheet.col(5).width = 5000
-        workSheet.write(row_num, 5, record.serial_number, style)
-        if record.buy_date:
-            workSheet.write(
-                row_num, 6, record.buy_date.strftime('%d.%m.%y'), style
-            )
-        if record.start_date:
-            workSheet.write(
-                row_num, 7, record.start_date.strftime('%d.%m.%y'), style
-            )
-        if record.end_date:
-            workSheet.write(
-                row_num, 8, record.end_date.strftime('%d.%m.%y'), style
-            )
-        if record.move_cost:
-            workSheet.write(row_num, 13, record.move_cost, style)
-        if record.work_cost:
-            workSheet.write(row_num, 14, record.work_cost, style)
-        workSheet.col(15).width = 8000
-        workSheet.write(row_num, 15, record.problem_description, style)
-        workSheet.col(16).width = 8000
-        workSheet.write(row_num, 16, record.work_description, style)
-        workSheet.col(17).width = 2000
-        workSheet.write(row_num, 17, record.code.code, style)
-        parts = ReportsParts.objects.filter(record=record)
-        for part in parts:
-            workSheet.col(9).width = 8000
-            workSheet.write(row_num, 9, part.title, style)
-            if part.price:
-                workSheet.write(row_num, 10, part.price, style)
-            if part.count:
-                workSheet.write(row_num, 11, part.count, style)
-            workSheet.write(row_num, 12, part.document, style)
-            row_num += 1
-        if parts:
-            row_num -= 1
-
-    # Footer
-    row_num += 1
-    workSheet.write(row_num, 10, f'{report.total_part} руб', boldStyle)
-    workSheet.write(row_num, 13, f'{report.total_move} руб', boldStyle)
-    workSheet.write(row_num, 14, f'{report.total_work} руб', boldStyle)
-    workSheet.write(
-        row_num + 1,
-        0,
-        f'Всего по отчету: {report.total_cost} рублей.',
-        boldStyle,
-    )
-
+    workBook = report_xls(report)
     workBook.save(response)
     return response
 
@@ -1128,7 +1017,9 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
         context['title'] = 'Все заказанные детали'
 
         # поготовливаем qset деталей с учетом фильтра
-        parts = ReportsParts.objects.filter(order_date__isnull=False).values(
+        parts = ReportsParts.objects.filter(order_date__isnull=False).order_by(
+            'record__pk', 'order_date'
+            ).values(
             'pk',
             'title',
             'record__pk',
@@ -1136,6 +1027,8 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
             'count',
             'send_date',
             'order_date',
+            'record__model_description',
+            'record__report__service_center__pk',
         )
         # если пользователь - менеджер региона
         user_regions = ServiceRegions.objects.filter(
@@ -1188,23 +1081,10 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
                     parts = parts.filter(order_date__lt=last_date)
 
         # подговка данных о сервисных центрах, отчетах и ремонтах
-        rec = parts.values('record').distinct()
-        records = ReportsRecords.objects.filter(id__in=rec).values(
-            'pk',
-            'report__pk',
-            'product__title',
-            'model_description',
-            'serial_number',
-        )
-        rep = records.values('report__pk').distinct()
-        reports = Reports.objects.filter(id__in=rep).values(
-            'pk', 'service_center__pk', 'report_date', 'status'
-        )
-        cnt = reports.values('service_center__pk').distinct()
+        cnt = parts.values('record__report__service_center__pk').distinct()
         centers = ServiceCenters.objects.filter(id__in=cnt).values(
             'pk',
             'title',
-            'staff_user',
             'region__title',
             'region__staff_user',
             'post_addr',
@@ -1215,11 +1095,24 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
             paginator = Paginator(centers, 3)
         else:
             paginator = Paginator(centers, 999)
+
+        num = 0
+        for part in parts:
+            part['show_record'] = (
+                True if (
+                    (num == 0)
+                    or (
+                        parts[num-1]['record__model_description']
+                        != part['record__model_description']
+                        )
+                    )
+                else False
+            )
+            num += 1
+
         page_number = self.request.GET.get('page')
         context['page_obj'] = paginator.get_page(page_number)
         context['centers'] = centers
-        context['reports'] = reports
-        context['records'] = records
         context['parts'] = parts
         context['obj_count'] = parts.count()
         context['form'] = UserPartForm(self.request.GET)
@@ -1232,19 +1125,25 @@ def SendParts(request):
 
     def GetPartOrderPdf(parts_pk):
         """ Подготовка Pdf файла этикетки """
-        center_pk = ReportsParts.objects.get(pk=parts_pk[0]).\
-                        record.report.service_center.pk
-        order_data = [
-            {
-                'center': center_pk,
-                'parts': parts_pk
-            }
-        ]
+       
+        parts_data = ReportsParts.objects.filter(pk__in=parts_pk).values_list(
+                'record__report__service_center__pk', 'pk'
+            )
+        order_data = []
+        for part in parts_data:
+            need_add = True
+            for item in order_data:
+                if item['center'] == part[0]:
+                    item['parts'].append(part[1])
+                    need_add = False
+                    break
+            if need_add:
+                order_data.append({'center': part[0],'parts': [part[1]]})
         buffer = order_part_blank(order_data)
         response = HttpResponse(content_type='application/pdf')
         response[
             'Content-Disposition'
-        ] = f'attachment; filename=renova_part_orders_for_{center_pk}.pdf'
+        ] = f'attachment; filename=renova_part_orders.pdf'
         response.write(buffer.getvalue())
         buffer.close()
         return response
@@ -1260,10 +1159,7 @@ def SendParts(request):
 
     if request.method == 'POST':
         # создаем список кллючей таблицы Parts из параметров запроса
-        parts_pk = [
-            int(key.replace('part', ''))
-            for key in request.POST.keys() if key.find('part') == 0
-        ]
+        parts_pk = list(map(int, request.POST.getlist('parts')))
         if not parts_pk:
             messages.error(request, 'Ни одна деталь не выбрана !')
             return redirect('staff-ordered-parts')

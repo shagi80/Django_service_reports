@@ -147,13 +147,16 @@ class RecordForm(forms.ModelForm):
                 self.fields['model_description'].disabled = True
                 self.fields['work_type'].disabled = True
                 self.fields['serial_number'].disabled = True
-                self.fields['client_type'].disabled = True
-                self.fields['client'].disabled = True
-                self.fields['client_phone'].disabled = True
-                self.fields['client_addr'].disabled = True
-                self.fields['client_email'].disabled = True
-                self.fields['buy_date'].disabled = True
-                self.fields['start_date'].disabled = True
+                self.fields['client_type'].disabled = bool(self.instance.client_type)
+                self.fields['client'].disabled = bool(self.instance.client)
+                self.fields['client_phone'].disabled = bool(self.instance.client_phone)
+                self.fields['client_addr'].disabled = bool(self.instance.client_addr)
+                self.fields['client_email'].disabled = bool(self.instance.client_email)
+                self.fields['buy_date'].disabled = (
+                    bool(self.instance.buy_date)
+                    or self.instance.work_type != 'warranty'
+                )
+                self.fields['start_date'].disabled = bool(self.instance.start_date)
                 self.fields['order_parts'].disabled = True
 
         # это нужно что бы по умолчанию в полях было пусто
@@ -318,6 +321,8 @@ class RecordForm(forms.ModelForm):
             self.cleaned_data['model_description'] = normalize_string(
                 cleaned_data['model_description']
             )
+        
+        # проверка указания модели
         if (
             'model_description' not in cleaned_data
             or not cleaned_data['model_description']
@@ -328,6 +333,8 @@ class RecordForm(forms.ModelForm):
                     'Обязательное поле !',
                 ],
             )
+        
+        # проверка серийного номера
         if 'serial_number' in cleaned_data:
             self.cleaned_data['serial_number'] = normalize_string(
                 cleaned_data['serial_number']
@@ -394,94 +401,90 @@ class RecordForm(forms.ModelForm):
                                 )
             if error:
                 self.add_error('serial_number', error)
+        
+        # проверка даты поупки
         if (
             'work_type' in cleaned_data
             and cleaned_data['work_type'] == 'warranty'
-        ) and not cleaned_data['buy_date']:
+            and not cleaned_data['buy_date']
+            ):
             self.add_error('buy_date', 'Обязательное поле !')
-        if (
-            'start_date' in cleaned_data
-            and 'end_date' in cleaned_data
-            and cleaned_data['start_date']
-            and cleaned_data['end_date']
-        ):
-            error = []
+        if 'buy_date' in cleaned_data and cleaned_data['buy_date']:
+            buy_date = cleaned_data['buy_date']
+            if (
+                'start_date' in cleaned_data
+                and cleaned_data['start_date']
+                and buy_date > cleaned_data['start_date']
+                ):
+                self.add_error(
+                    'buy_date',
+                    'Дата покупки позднее даты начала ремонта !',
+                )
+            if (
+                'end_date' in cleaned_data
+                and cleaned_data['end_date']
+                and buy_date > cleaned_data['end_date']
+                ):
+                self.add_error(
+                    'buy_date',
+                    'Дата покупки позднее даты окончания ремонта !',
+                )
+            if buy_date > NOW_DATE:
+                self.add_error(
+                    'buy_date', 'Дата покупки товара в будущем !'
+                )
+        
+        # проыерка даты начала ремонта
+        if ('start_date' in cleaned_data and cleaned_data['start_date']):
             start_date = cleaned_data['start_date']
-            end_date = cleaned_data['end_date']
             if start_date > NOW_DATE:
                 self.add_error('start_date', 'Дата начала ремонта в будущем !')
-            if start_date > end_date:
+            if (
+                'end_date' in cleaned_data
+                and cleaned_data['end_date']
+                and start_date > cleaned_data['end_date']
+                ):
                 self.add_error(
                     'start_date',
                     'Дата начала ремонта позднее даты окончания !',
                 )
+        
+        # проверка даты окончания ремонта
+        if ('end_date' in cleaned_data and cleaned_data['end_date']):
+            end_date = cleaned_data['end_date']
             if end_date > NOW_DATE:
                 self.add_error(
                     'end_date', 'Дата окончания ремонта в будущем !'
                 )
-            if 'buy_date' in cleaned_data and cleaned_data['buy_date']:
-                buy_date = cleaned_data['buy_date']
-                if buy_date > start_date:
-                    self.add_error(
-                        'buy_date',
-                        'Дата покупки позднее даты начала ремонта !',
-                    )
-                if buy_date > end_date:
-                    self.add_error(
-                        'buy_date',
-                        'Дата покупки позднее даты окончания ремонта !',
-                    )
-                if buy_date > NOW_DATE:
-                    self.add_error(
-                        'buy_date', 'Дата покупки товара в будущем !'
-                    )
-            if 'main_date' in cleaned_data and cleaned_data['main_date']:
-                main_date = cleaned_data['main_date']
-                if main_date > start_date:
-                    self.add_error(
-                        'start_date',
-                        'Дата производства позднее даты начала ремонта !',
-                    )
-                if (
-                    'buy_date' in cleaned_data
-                    and cleaned_data['buy_date']
-                    and main_date > cleaned_data['buy_date']
-                ):
-                    self.add_error(
-                        'buy_date', 'Дата производства позднее даты покупки !'
-                    )
 
-        # проверка типа продукции и запрос e-mail организаций с 31.12.2023
-        CLIENT_TYPE_CHECK_DATE = datetime.datetime.strptime(
-            '31.12.2023', '%d.%m.%Y'
-        ).date()
-        if cleaned_data['report'].report_date > CLIENT_TYPE_CHECK_DATE:
-            if (
-                'client_type' not in cleaned_data
-                or not cleaned_data['client_type']
+        # проверка типа продукции и запрос e-mail организаций
+        if (
+            'work_type' in cleaned_data
+            and cleaned_data['work_type'] == 'warranty'
+            and not cleaned_data['client_type']
             ):
-                self.add_error(
-                    'client_type',
-                    [
-                        'Это обязательное поле !',
-                    ],
-                )
+            self.add_error(
+                'client_type',
+                [
+                    'Это обязательное поле !',
+                ],
+            )
+        if 'client_type' in cleaned_data and cleaned_data['client_type']:
+            if cleaned_data['client_type'] == 'organization':
+                clean_client_data(True)
             else:
-                if cleaned_data['client_type'] == 'organization':
-                    clean_client_data(True)
+                if (
+                    'work_type' in cleaned_data
+                    and cleaned_data['work_type'] == 'warranty'
+                ):
+                    clean_client_data(False)
                 else:
-                    if (
-                        'work_type' in cleaned_data
-                        and cleaned_data['work_type'] == 'warranty'
-                    ):
-                        clean_client_data(False)
-                    else:
-                        self.add_error(
-                            'client_type',
-                            [
-                                'Предторгвое изделие не может принадлежать физлицу !',
-                            ],
-                        )
+                    self.add_error(
+                        'client_type',
+                        [
+                            'Предторгвое изделие не может принадлежать физлицу !',
+                        ],
+                    )
 
         # проверка на не критичные ошибки
         warnings = ''
