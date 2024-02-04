@@ -398,9 +398,7 @@ def part_order_xls(order_data):
     workSheet.write(
         0,
         0,
-        f'Заказ запчастей от {datetime.datetime.now().strftime(
-            "%d.%m.%Y %H:%M:%S"
-        )}',
+        f'Заказ запчастей от {datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}',
         boldStyle,
     )
 
@@ -518,9 +516,7 @@ def part_order_list_xls(order_data):
     workSheet.write(
         0,
         0,
-        f'Заказ запчастей от {datetime.datetime.now().strftime(
-            "%d.%m.%Y %H:%M:%S"
-        )}',
+        f'Заказ запчастей от {datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}',
         boldStyle,
     )
 
