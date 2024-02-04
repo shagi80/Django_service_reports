@@ -1,6 +1,7 @@
 import io
 import xlwt
 import os.path
+import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, mm
 from reportlab.lib.styles import ParagraphStyle
@@ -380,4 +381,220 @@ def report_xls(report):
         boldStyle,
     )
 
+    return workBook
+
+
+def part_order_xls(order_data):
+    """ Подготовка XLS в формате таблиц заказов. """
+
+    workBook = xlwt.Workbook(encoding='utf-8')
+    workSheet = workBook.add_sheet('orders')
+
+    # Sheet header, first row
+    style = xlwt.XFStyle()
+    boldStyle = xlwt.XFStyle()
+    boldStyle.font.bold = True
+    row_num = 0
+    workSheet.write(
+        0,
+        0,
+        f'Заказ запчастей от {datetime.datetime.now().strftime(
+            "%d.%m.%Y %H:%M:%S"
+        )}',
+        boldStyle,
+    )
+
+    headerStyle = xlwt.easyxf(
+        """
+        font: bold off, color black;
+        borders: left thin, right thin, top thin, bottom thin;
+        pattern: pattern solid, fore_color white, fore_colour gray25;
+        align: horiz center, vert top;
+        """
+    )
+    tableStyle = xlwt.easyxf(
+        """
+        borders: left thin, right thin, top thin, bottom thin;
+        align: wrap on, horiz left, vert top;
+        """
+    )
+    headerStyle.alignment.wrap = 1
+    columns = ['№', 'Продукция', 'Деталь', 'Кол', 'Дата заказа',
+               'Дата отправки', 'Номер отправки']
+    workSheet.col(0).width = 1000
+    workSheet.col(1).width = 9000
+    workSheet.col(2).width = 8000
+    workSheet.col(3).width = 1500
+    workSheet.col(4).width = 4000
+    workSheet.col(5).width = 4000
+    workSheet.col(6).width = 8000
+
+    for order in order_data:
+        row_num += 2
+        center = ServiceCenters.objects.get(pk=order['center'])
+        workSheet.write(
+            row_num,
+            0,
+            f'{center.title} ({center.region.title})',
+            boldStyle
+        )
+        row_num += 1
+        workSheet.write(
+            row_num,
+            0,
+            f'{center.post_addr}',
+            style
+        )
+        row_num += 1
+        contact = center.servicecontacts_set.all().values_list(
+            'name', 'tel_num', 'email'
+            )
+        workSheet.write(
+            row_num,
+            0,
+            (
+                ', '.join(contact.first())
+                if contact else center.user.email
+            ),
+            style
+        )
+        row_num += 2
+        for col_num in range(len(columns)):
+            workSheet.write(row_num, col_num, columns[col_num], headerStyle)
+        # вывод деталей
+        parts = ReportsParts.objects.filter(pk__in=order['parts']).order_by(
+            'title'
+        ).values(
+            'pk',
+            'title',
+            'count',
+            'record__product__title',
+            'record__model__title',
+            'order_date',
+            'send_date',
+            'send_number'
+        )
+        row_num_str = 0
+        for part in parts:
+            row_num += 1
+            row_num_str += 1
+            workSheet.write(row_num, 0, str(row_num_str), tableStyle)
+            product_description = (
+                part['record__product__title']
+                + ' '
+                + part['record__model__title']
+            )
+            workSheet.write(row_num, 1, product_description, tableStyle)
+            workSheet.write(row_num, 2, part['title'], tableStyle)
+            workSheet.write(row_num, 3, part['count'], tableStyle)
+            workSheet.write(
+                row_num, 4, part['order_date'].strftime('%d.%m.%Y'), tableStyle
+            )
+            send_date = (
+                part['send_date'].strftime('%d.%m.%Y')
+                if part['send_date'] else ''
+                )
+            send_number = part['send_number'] if part['send_number'] else ''
+            workSheet.write(row_num, 5, send_date, tableStyle)
+            workSheet.write(row_num, 6, send_number, tableStyle)
+        row_num += 1
+    return workBook
+
+
+def part_order_list_xls(order_data):
+    """ Подготовка XLS в формате таблиц заказов. """
+
+    workBook = xlwt.Workbook(encoding='utf-8')
+    workSheet = workBook.add_sheet('orders')
+
+    # Sheet header, first row
+    boldStyle = xlwt.easyxf(
+        """
+        font: bold on, color black;
+        align: horiz left, vert top;
+        """
+    )
+    row_num = 0
+    workSheet.write(
+        0,
+        0,
+        f'Заказ запчастей от {datetime.datetime.now().strftime(
+            "%d.%m.%Y %H:%M:%S"
+        )}',
+        boldStyle,
+    )
+
+    headerStyle = xlwt.easyxf(
+        """
+        font: bold off, color black;
+        borders: left thin, right thin, top thin, bottom thin;
+        pattern: pattern solid, fore_color white, fore_colour gray25;
+        align: horiz center, vert top;
+        """
+    )
+    tableStyle = xlwt.easyxf(
+        """
+        borders: left thin, right thin, top thin, bottom thin;
+        align: wrap on, horiz left, vert top;
+        """
+    )
+    headerStyle.alignment.wrap = 1
+    columns = ['№', 'Сервисный центр', 'Продукция', 'Деталь', 'Кол-во',
+               'Дата заказа', 'Дата отправки', 'Номер отправки']
+    workSheet.col(0).width = 1000
+    workSheet.col(1).width = 6000
+    workSheet.col(2).width = 9000
+    workSheet.col(3).width = 8000
+    workSheet.col(4).width = 1500
+    workSheet.col(5).width = 3000
+    workSheet.col(6).width = 3000
+    workSheet.col(7).width = 6000
+    row_num += 2
+    for col_num in range(len(columns)):
+        workSheet.write(row_num, col_num, columns[col_num], headerStyle)
+
+    row_num_str = 0
+    for order in order_data:
+        # вывод деталей
+        parts = ReportsParts.objects.filter(pk__in=order['parts']).order_by(
+            'title'
+        ).values(
+            'pk',
+            'title',
+            'count',
+            'record__product__title',
+            'record__model__title',
+            'order_date',
+            'send_date',
+            'send_number'
+        )
+        for part in parts:
+            row_num_str += 1
+            row_num += 1
+            center = ServiceCenters.objects.get(pk=order['center'])
+            workSheet.write(
+                row_num,
+                1,
+                f'{center.title} ({center.region.title})',
+                tableStyle
+            )
+            workSheet.write(row_num, 0, str(row_num_str), tableStyle)
+            product_description = (
+                part['record__product__title']
+                + ' '
+                + part['record__model__title']
+            )
+            workSheet.write(row_num, 2, product_description, tableStyle)
+            workSheet.write(row_num, 3, part['title'], tableStyle)
+            workSheet.write(row_num, 4, part['count'], tableStyle)
+            workSheet.write(
+                row_num, 5, part['order_date'].strftime('%d.%m.%Y'), tableStyle
+            )
+            send_date = (
+                part['send_date'].strftime('%d.%m.%Y')
+                if part['send_date'] else ''
+                )
+            send_number = part['send_number'] if part['send_number'] else ''
+            workSheet.write(row_num, 6, send_date, tableStyle)
+            workSheet.write(row_num, 7, send_number, tableStyle)
     return workBook

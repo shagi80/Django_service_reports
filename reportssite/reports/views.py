@@ -39,7 +39,7 @@ from mail.views import (
 from main.business_logic import GetPrices, STATUS_ACCEPTED, STATUS_PAYMENT
 from reportssite.settings import DEBUG
 from non_repairability_act.models import NonRepairabilityAct, ActStatus
-from reports.export import order_part_blank, report_xls
+from reports.export import order_part_blank, report_xls, part_order_xls, part_order_list_xls
 
 
 # -------------------------- ОТПРАКА ПОЧТЫ -------------------------------
@@ -1059,10 +1059,13 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
                 )
             )
         if parts.exists():
-            if not (
-                'show_send' in self.request.GET
-                and self.request.GET['show_send']
-            ):
+            if 'show_send' in self.request.GET and self.request.GET['show_send']:
+                parts = parts.order_by('send_date')
+                if 'send_start' in self.request.GET and self.request.GET['send_start']:
+                    parts = parts.filter(send_date__gt=self.request.GET['send_start'])
+                if 'send_end' in self.request.GET and self.request.GET['send_end']:
+                    parts = parts.filter(send_date__lt=self.request.GET['send_end'])    
+            else:
                 parts = parts.filter(send_number__isnull=True)
             if 'filter' in self.request.GET and self.request.GET['filter']:
                 parts = parts.filter(title__iregex=self.request.GET['filter'])
@@ -1092,7 +1095,7 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
 
         # настройка пагинации
         if 'show_send' in self.request.GET and self.request.GET['show_send']:
-            paginator = Paginator(centers, 3)
+            paginator = Paginator(centers, 5)
         else:
             paginator = Paginator(centers, 999)
 
@@ -1123,9 +1126,9 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
 def SendParts(request):
     """ Обработка формы на странице списка заказов деталей """
 
-    def GetPartOrderPdf(parts_pk):
-        """ Подготовка Pdf файла этикетки """
-       
+    def get_order_data(parts_pk):
+        """ Формирование стуктуры заказа. """
+
         parts_data = ReportsParts.objects.filter(pk__in=parts_pk).values_list(
                 'record__report__service_center__pk', 'pk'
             )
@@ -1138,14 +1141,31 @@ def SendParts(request):
                     need_add = False
                     break
             if need_add:
-                order_data.append({'center': part[0],'parts': [part[1]]})
+                order_data.append({'center': part[0],'parts': [part[1]]})   
+        return order_data
+
+    def GetPartOrderPdf(order_data):
+        """ Подготовка Pdf файла этикетки """
+       
         buffer = order_part_blank(order_data)
         response = HttpResponse(content_type='application/pdf')
         response[
             'Content-Disposition'
-        ] = f'attachment; filename=renova_part_orders.pdf'
+        ] = 'attachment; filename=renova_part_orders.pdf'
         response.write(buffer.getvalue())
         buffer.close()
+        return response
+
+    def get_order_data_xls(order_data, mode):
+        response = HttpResponse(content_type='application/ms-excel')
+        response[
+            'Content-Disposition'
+        ] = 'attachment; filename=orders.xls'
+        if mode == 'export_data':
+            workBook = part_order_xls(order_data)
+        elif mode == 'export_data_list':
+            workBook = part_order_list_xls(order_data)
+        workBook.save(response)
         return response
 
     def SaveSendPartsData(parts_pk, send_date, number):
@@ -1164,10 +1184,10 @@ def SendParts(request):
             messages.error(request, 'Ни одна деталь не выбрана !')
             return redirect('staff-ordered-parts')
         # если список не пуст определеям режим работы
-        if 'print_label' in request.POST:
+        if request.POST['submit_mode'] == 'print_label':
             # Режим - печать ярлыка
-            return GetPartOrderPdf(parts_pk)
-        else:
+            return GetPartOrderPdf(get_order_data(parts_pk))      
+        elif request.POST['submit_mode'] == 'save_data':
             # Режим - запись данных об отрправке
             # Проверяем заполнение формы
             if not request.POST['number']:
@@ -1183,87 +1203,14 @@ def SendParts(request):
                 request.POST['number']
             )
             messages.success(request, 'Данные об отправке записаны !')
+        else:
+            # режим экспорта таблицы
+            return get_order_data_xls(
+                get_order_data(parts_pk),
+                request.POST['submit_mode'] 
+                )
 
     return redirect('staff-ordered-parts')
-
-
-class ExportPartsToXLS(StaffUserMixin, View):
-    def get(self, request, center_pk):
-        center = get_object_or_404(ServiceCenters, pk=center_pk)
-        parts = (
-            ReportsParts.objects.filter(
-                order_date__isnull=False,
-                record__report__service_center=center,
-                send_number__isnull=True,
-            )
-            .order_by('title')
-            .values(
-                'pk',
-                'title',
-                'count',
-                'record__product__title',
-                'record__model__title',
-                'order_date',
-            )
-        )
-
-        response = HttpResponse(content_type='application/ms-excel')
-        file_name = re.sub(r'[^\w\s]', '', center.title) + '.xls'
-        response[
-            'Content-Disposition'
-        ] = 'attachment; filename=' + escape_uri_path(file_name)
-        workBook = xlwt.Workbook(encoding='utf-8')
-        workSheet = workBook.add_sheet(center.title)
-
-        # Sheet header, first row
-        style = xlwt.XFStyle()
-        boldStyle = xlwt.XFStyle()
-        boldStyle.font.bold = True
-        row_num = 0
-        workSheet.write(
-            0,
-            0,
-            f'Заказ запчастей {center} на {datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}',
-            boldStyle,
-        )
-        workSheet.write(1, 0, center.post_addr, style)
-
-        # Table header, third row
-        row_num = 3
-        workSheet.row(row_num).height = 600
-        headerStyle = xlwt.easyxf(
-            'font: bold off, color black; borders: left thin, right thin, top thin, bottom thin;\
-        pattern: pattern solid, fore_color white, fore_colour gray25; align: horiz center, vert top;'
-        )
-        headerStyle.alignment.wrap = 1
-        columns = ['№', 'Продукция', 'Деталь', 'Кол-во', 'Дата заказа']
-        for col_num in range(len(columns)):
-            workSheet.write(row_num, col_num, columns[col_num], headerStyle)
-
-        # Sheet body, remaining rows
-        row_num_str = 0
-        workSheet.col(0).width = 1000
-        workSheet.col(1).width = 15000
-        workSheet.col(2).width = 10000
-        for part in parts:
-            row_num += 1
-            row_num_str += 1
-            workSheet.write(row_num, 0, str(row_num_str), style)
-            product_description = (
-                part['record__product__title']
-                + ' '
-                + part['record__model__title']
-            )
-            workSheet.write(row_num, 1, product_description, style)
-            workSheet.write(row_num, 2, part['title'], style)
-            workSheet.write(row_num, 3, part['count'], style)
-            workSheet.write(
-                row_num, 4, part['order_date'].strftime('%d.%m.%Y'), style
-            )
-
-        workBook.save(response)
-        return response
-
 
 # -------------------------- СПЕЦИАЛЬНЫЕ ФУНКЦИИ ---------------------------------------
 

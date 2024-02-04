@@ -1,8 +1,13 @@
-<div class="modal-header">
-    <h4 class="modal-title" id="recordDataLabel_{{ report.pk }}">{{ record.report.service_center }}</h4>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
-<div class="modal-body">
+<div>
+    <div class="mb-2">
+        <h4 class="modal-title" id="recordDataLabel_{{ report.pk }}">{{ record.report.service_center }}</h4>
+        <div style="font-size:0.9rem">{{ record.report.service_center.post_addr }}</div>
+        {% for contact in record.report.service_center.servicecontacts_set.all %}
+            <div style="font-size:0.9rem">
+                {{ contact.name }}, {{ contact.tel_num }}, {{ contact.email }}
+            </div>
+        {% endfor %}
+    </div>
     <p><strong>
         {{ record.product.title }}<br>
         {{ record.model_description }}

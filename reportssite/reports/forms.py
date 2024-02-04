@@ -682,15 +682,15 @@ class UserPartForm(forms.Form):
     ]
 
     filter = forms.CharField(
-        required=False, widget=forms.TextInput(attrs={'class': 'form-control'})
+        required=False, widget=forms.TextInput(attrs={'class': 'form-control form-control-sm'})
     )
     center = forms.ChoiceField(
         choices=blank + centers,
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'}),
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'}),
     )
     period = forms.ImageField(
-        required=False, widget=forms.TextInput(attrs={'class': 'form-control'})
+        required=False, widget=forms.TextInput(attrs={'class': 'form-control form-control-sm'})
     )
     show_send = forms.BooleanField(
         label='активные',
@@ -698,4 +698,10 @@ class UserPartForm(forms.Form):
         widget=forms.CheckboxInput(
             attrs={'type': 'checkbox', 'class': 'form-check-input'}
         ),
+    )
+    send_start = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={'class': 'form-control form-control-sm','type': 'date'})
+    )
+    send_end = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={'class': 'form-control form-control-sm', 'type': 'date'})
     )
