@@ -1105,8 +1105,8 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
                 True if (
                     (num == 0)
                     or (
-                        parts[num-1]['record__model_description']
-                        != part['record__model_description']
+                        parts[num-1]['record__pk']
+                        != part['record__pk']
                         )
                     )
                 else False
@@ -1168,9 +1168,9 @@ def SendParts(request):
         workBook.save(response)
         return response
 
-    def SaveSendPartsData(parts_pk, send_date, number):
+    def SaveSendPartsData(parts, send_date, number):
         """ Запись данных от отправке деталей """
-        parts = ReportsParts.objects.filter(pk__in=parts_pk)
+
         for part in parts:
             part.send_date = send_date
             part.send_number = number
@@ -1190,6 +1190,13 @@ def SendParts(request):
         elif request.POST['submit_mode'] == 'save_data':
             # Режим - запись данных об отрправке
             # Проверяем заполнение формы
+            parts = ReportsParts.objects.filter(
+                pk__in=parts_pk,
+                record__report__service_center__pk=request.POST['center']
+                )
+            if not parts:
+                messages.error(request, 'Для этого сервисного центра детали не выбраны !')
+                return redirect('staff-ordered-parts')  
             if not request.POST['number']:
                 messages.error(request, 'Не указан номер отправления !')
                 return redirect('staff-ordered-parts')
@@ -1198,7 +1205,7 @@ def SendParts(request):
                 return redirect('staff-ordered-parts')
             # Записываем данные об отправке
             SaveSendPartsData(
-                parts_pk,
+                parts,
                 request.POST['send_date'],
                 request.POST['number']
             )

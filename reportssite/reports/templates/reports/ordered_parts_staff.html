@@ -104,7 +104,8 @@
                             </div>
                             {% if request.user.pk == center.staff_user or request.user.pk == center.region__staff_user or request.user.is_superuser %}                                   
                             <div class='col-auto p-1'>     
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#sendModal{{ center.pk }}">
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#sendModal" data-center='{{ center.pk }}'>
                                     <i class="bi bi-box2"></i>
                                 </button>     
                             </div>
@@ -149,43 +150,45 @@
                             {% endfor %}
                         </div>
                     </div>    
-                        
-                    <!-- Модальное окно записа данных от отправке -->
-                    <div class="modal fade" id="sendModal{{ center.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                        <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="sendModalLabel{{ center.pk }}">Данные об отправке</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="row mt-2 align-items-center">
-                                    <label class="col-4">№ отправления:</label>
-                                    <div class="col-7">
-                                        <input type="Text" class="form-control form-control-sm" name="number">
-                                    </div>
-                                </div>
-                                <div class="row mt-2 align-items-center">
-                                    <label class="col-4">Дата отправки:</label>
-                                    <div class="col-4">
-                                        <input type="Date" class="form-control form-control-sm" name="send_date">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" name="submit_mode" value='save_data' class="modalButtons btn btn-outline-primary">Отправить</button>
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отменить</button>                                       
-                            </div>
-                            <div class="modalButtonsSpin modal-footer justify-content-center" style="display:none;">
-                                <div class="spinner-border" role="status">
-                                </div>
-                                <strong class="text-danger">Пожалуйста, подождите ...</strong>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
 
                 {% endfor%}
+
+                <!-- Модальное окно записа данных от отправке -->
+                <div class="modal fade" id="sendModal" tabindex="-1" aria-labelledby="sendModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="sendModalLabel">Данные об отправке</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input id="center" name="center" value="" hidden>
+                            <div class="row mt-2 align-items-center">
+                                <label class="col-4">№ отправления:</label>
+                                <div class="col-7">
+                                    <input type="Text" class="form-control form-control-sm" name="number">
+                                </div>
+                            </div>
+                            <div class="row mt-2 align-items-center">
+                                <label class="col-4">Дата отправки:</label>
+                                <div class="col-4">
+                                    <input type="Date" class="form-control form-control-sm" name="send_date">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" name="submit_mode" value='save_data' class="modalButtons btn btn-outline-primary">Отправить</button>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отменить</button>                                       
+                        </div>
+                        <div class="modalButtonsSpin modal-footer justify-content-center" style="display:none;">
+                            <div class="spinner-border" role="status">
+                            </div>
+                            <strong class="text-danger">Пожалуйста, подождите ...</strong>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
                 </form>
             {% else %}
             <h4 class="text-center text-muted">Ничего не найдено ...</h4>
@@ -253,6 +256,12 @@
     };
 
     $("#id_show_send").on('click', showSetDates);
+
+    $('#sendModal').on('show.bs.modal', function(event){
+        var center_pk = $(event.relatedTarget).attr('data-center');
+        console.log(center_pk);
+        $('#center').val(center_pk);
+    })
 
     $( document ).ready(function() {
         showSetDates();
