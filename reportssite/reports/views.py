@@ -1062,9 +1062,9 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
             if 'show_send' in self.request.GET and self.request.GET['show_send']:
                 parts = parts.order_by('send_date')
                 if 'send_start' in self.request.GET and self.request.GET['send_start']:
-                    parts = parts.filter(send_date__gt=self.request.GET['send_start'])
+                    parts = parts.filter(send_date__gte=self.request.GET['send_start'])
                 if 'send_end' in self.request.GET and self.request.GET['send_end']:
-                    parts = parts.filter(send_date__lt=self.request.GET['send_end'])    
+                    parts = parts.filter(send_date__lte=self.request.GET['send_end'])    
             else:
                 parts = parts.filter(send_number__isnull=True)
             if 'filter' in self.request.GET and self.request.GET['filter']:
