@@ -246,8 +246,12 @@ class ActStaffChangeStatusView(StaffUserMixin, ProcessFormView):
                 request.POST['message'] if 'message' in request.POST else None
             )
             # действие при отправке на доработку
-            # if (request.POST['new_status'] == models.ActStatus.REFINEMENT and message):
-            #  obj.add_member(message, True, request.user)
+            # запись в members сообщения сервису
+            if (
+                request.POST['new_status'] == models.ActStatus.REFINEMENT
+                and message
+                ):
+                obj.add_member(message, True, request.user)
             # действия при подтверждении Акта
             if request.POST['new_status'] == models.ActStatus.CONFIRMED:
                 # сбрасываем замечания
