@@ -12,7 +12,7 @@
     <main>
         <div class="row py-4 justify-content-between">
             <div class="col-md-7 text-start"><h3>{{ title }}</h3></div>
-            {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+            {% if request.user.is_staff %}
                 <div class="col-1 text-end-lg order-last">               
                     <a class="btn btn-primary" href="{% url 'contact_add_page' %}" role="button">Добавить</a>                
                 </div>
@@ -38,7 +38,7 @@
                             {{ contact.service_center }}
                         </div>
                         <div class="col-auto">
-                            {% if request.user|has_group:"GeneralStaff" or request.user == contact.service_center.staff_user %}
+                            {% if request.user|has_group:"GeneralStaff" or request.user == contact.service_center.staff_user or request.user.is_superuser %}
                               <a href="{{ contact.get_absolute_url }}" class="btn btn-outline-success"><i class="bi bi-pencil"></i></a>
                             {% else %}
                             <a href="#" class="btn btn-outline-secondary disabled"><i class="bi bi-pencil"></i></a>

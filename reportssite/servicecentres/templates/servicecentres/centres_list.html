@@ -53,7 +53,7 @@
                             {{ form.active_only }}
                         </div>
                     </div>
-                    <div class="container d-flex justify-content-center gap-2">
+                    <div class="container d-flex justify-content-center gap-2 mb-2">
                         <button type="submit" class="btn btn-outline-primary">
                             <i class="bi bi-search"></i>
                             выбрать
@@ -92,7 +92,7 @@
                         {% if item.post_addr %}
                         <div class="row"><label class="card-text">Почтовый адрес: {{ item.post_addr }}</label></div>
                         {% endif %}
-                        {% if request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                        {% if request.user.is_superuser or request.user|has_group:'GeneralStaff' or request.user == item.staff_user %}
                         <div class="row justify-content-start py-1">
                             <div class="col-auto"><i class="bi bi-coin"></i></div>
                             <div class="col"><p class="card-text">тип прайса:  {{ item.get_price_type_display}}</p></div>
@@ -121,7 +121,7 @@
                                 {% if item.staff_user == request.user or request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
                                 <a href="{%url 'code_and_prices_page' item.pk %}" class="btn btn-outline-secondary">Расценки</a>
                                 <a href="{%url 'reports_list' %}?service_center={{ item.pk }}" class="btn btn-outline-secondary">Отчеты</a>
-                                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser %}
+                                {% if request.user|has_group:'GeneralStaff' or request.user.is_superuser or request.user == item.staff_user %}
                                     <a href="{{ item.get_absolute_url }}?next={{ request.get_full_path }}" class="btn btn-outline-success"><i class="bi bi-pencil"></i></a>
                                 {% endif %}
                                 {% endif %}

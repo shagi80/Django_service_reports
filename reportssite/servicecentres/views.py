@@ -67,11 +67,18 @@ class ServiceCentersAdd(LoginRequiredMixin, GeneralStaffUserMixin, MyFormMessage
         return kwargs
 
 
-class ServiceCenterUpdate(LoginRequiredMixin, GeneralStaffUserMixin, MyFormMessagesView, UpdateView):
+class ServiceCenterUpdate(LoginRequiredMixin, StaffUserMixin, MyFormMessagesView, UpdateView):
     model = ServiceCenters
     form_class = CenterCreateForm
     template_name = 'servicecentres/centres_add.html'
     success_message = 'Обьект успешно изменен'
+
+    def test_func(self):
+        return (
+            self.request.user == self.get_object().staff_user
+            or self.request.user.is_superuser
+            or self.request.user.groups.filter(name='GeneralStaff').exists()
+            )
 
     def get_form_kwargs(self, *args, **kwargs):
         kwargs = super().get_form_kwargs(*args, **kwargs)
@@ -125,11 +132,20 @@ class ServiceCentersContactsByCenter(LoginRequiredMixin, StaffUserMixin, ListVie
         return ServiceContacts.objects.filter(service_center_id=self.kwargs['center_pk']).select_related('service_center')
 
 
-class ServiceContactAdd(LoginRequiredMixin, GeneralStaffUserMixin, MyFormMessagesView, CreateView):
+class ServiceContactAdd(LoginRequiredMixin, StaffUserMixin, MyFormMessagesView, CreateView):
     form_class = ContactCreateForm
     template_name = 'servicecentres/centres_contact_add.html'
     extra_context = {'title': 'Добавление контакта'}
     success_message = 'Контакт успешно добавлен'
+
+    def form_valid(self, form):
+        if (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name='GeneralStaff').exists()
+            or form.cleaned_data['service_center'].staff_user == self.request.user
+        ):
+            return super().form_valid(form)
+        return self.form_invalid(form)
 
     def get_success_url(self):
         if 'close' in self.request.POST:
@@ -143,12 +159,19 @@ class ServiceContactAdd(LoginRequiredMixin, GeneralStaffUserMixin, MyFormMessage
         return kwargs
 
 
-class ServiceContactUpdate(LoginRequiredMixin, GeneralStaffUserMixin, MyFormMessagesView, UpdateView):
+class ServiceContactUpdate(LoginRequiredMixin, StaffUserMixin, MyFormMessagesView, UpdateView):
     model = ServiceContacts
     form_class = ContactCreateForm
     template_name = 'servicecentres/centres_contact_add.html'
     extra_context = {'title': 'Изменение контакта'}
     success_message = 'Контакт успешно изменен'
+
+    def test_func(self):
+        return (
+            self.request.user == self.get_object().service_center.staff_user
+            or self.request.user.is_superuser
+            or self.request.user.groups.filter(name='GeneralStaff').exists()
+            )
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -167,7 +190,11 @@ class ServiceContactUpdate(LoginRequiredMixin, GeneralStaffUserMixin, MyFormMess
 
 def ContactDelete(request, contact_pk):
     obj = get_object_or_404(ServiceContacts, pk=contact_pk)
-    if request.user.is_superuser or request.user == obj.staff_user or request.user.groups.filter(name='GeneralStaff').exists():
+    if (
+        request.user.is_superuser
+        or request.user == obj.service_center.staff_user
+        or request.user.groups.filter(name='GeneralStaff').exists()
+    ):
         reverse_id = obj.service_center_id
         obj.delete()
         messages.success(request, 'Контакт успешно удален')
