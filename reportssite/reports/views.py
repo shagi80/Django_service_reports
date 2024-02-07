@@ -1094,11 +1094,19 @@ class StaffOrderedParts(LoginRequiredMixin, StaffUserMixin, TemplateView):
         )
 
         # настройка пагинации
-        if 'show_send' in self.request.GET and self.request.GET['show_send']:
+        paginator = Paginator(centers, 999)
+        if (
+            ('show_send' in self.request.GET and self.request.GET['show_send'])
+            and not (
+                'send_start' in self.request.GET
+                and self.request.GET['send_start']
+                )
+            and not (
+                'send_end' in self.request.GET
+                and self.request.GET['send_end']
+                )
+        ):
             paginator = Paginator(centers, 5)
-        else:
-            paginator = Paginator(centers, 999)
-
         num = 0
         for part in parts:
             part['show_record'] = (

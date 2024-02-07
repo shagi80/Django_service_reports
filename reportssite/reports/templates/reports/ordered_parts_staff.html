@@ -75,6 +75,12 @@
                 <form id="{{ center.pk }}"  method="POST" action='{% url "send-parts" %}'>
                 {% csrf_token %}
                 <div class="d-flex gap-2 mb-4">
+                    <a id="selectAllBtn" role="button" href="#" class="btn btn-outline-primary">
+                        <i class="bi bi-check-square-fill"></i>
+                    </a>
+                    <a id="unselectAllBtn" role="button" href="#" class="btn btn-outline-primary">
+                        <i class="bi bi-app"></i>
+                    </a>
                     <button type="submit" name="submit_mode" value='print_label' class="btn btn-outline-primary">
                         <i class="bi bi-printer"></i><span class="m-2">этикетки</span>
                     </button>
@@ -120,7 +126,7 @@
                                 <div class="row mb-1 mb-sm-0">
                                 {% endif %}
                                     <div class="col-sm-4 mx-1">
-                                        <input class="form-check-input" type="checkbox" name="parts" value="{{ part.pk }}">
+                                        <input class="part-check form-check-input" type="checkbox" name="parts" value="{{ part.pk }}">
                                         {% if part.show_record %}
                                             <a  href="#"
                                                 class="record-data-button ms-2"
@@ -214,7 +220,7 @@
     </div>
 
     <!-- кнопка ВВЕРХ -->
-    {% if reports %}  
+    {% if centers %}  
         {% include 'inc/go_to_top_button.html' %}
     {% endif %}
 
@@ -226,6 +232,20 @@
 
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script>
+    
+    function showSetDates() {
+        if ($("#id_show_send").is(':checked')){
+            $('#sent_dates').show();
+        } else {
+            $('#sent_dates').hide();
+        }
+    };
+
+    function checkPart(check) {
+        $('.part-check').each(function() {
+            $(this).prop('checked', check);
+        });
+    };
 
     $('.record-data-button').click(function(event){
         $('#recordDataBody').html('<h5 class="my-5 text-center">Идет загрузка данных ...</h5>');
@@ -241,19 +261,10 @@
             });
     });
 
-
     $('.modalButtons').click(function(){
         $(this).hide();
         $('.modalButtonsSpin').show();
     });
-
-    function showSetDates() {
-        if ($("#id_show_send").is(':checked')){
-            $('#sent_dates').show();
-        } else {
-            $('#sent_dates').hide();
-        }
-    };
 
     $("#id_show_send").on('click', showSetDates);
 
@@ -261,6 +272,10 @@
         var center_pk = $(event.relatedTarget).attr('data-center');
         $('#center').val(center_pk);
     })
+
+    $('#selectAllBtn').on('click', function(){checkPart(true)});
+
+    $('#unselectAllBtn').on('click', function(){checkPart(false)});
 
     $( document ).ready(function() {
         showSetDates();
