@@ -28,7 +28,7 @@
                             <button type="submit" class="btn btn-outline-primary" name="submit-save"><i class="bi bi-save part_flag"></i>  Записать</button>
                         {% endif %}
                         {% if form.instance and form.instance.pk %} 
-                            {% if form.instance.status.status == 'draft' %}
+                            {% if form.instance.status.status == 'draft' or form.instance.status.status == 'refinement' %}
                                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delete">Удалить</button>
                             {% endif %}  
                         {% endif %}  
