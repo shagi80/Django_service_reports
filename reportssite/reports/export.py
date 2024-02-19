@@ -467,7 +467,7 @@ def part_order_xls(order_data):
             'title',
             'count',
             'record__product__title',
-            'record__model__title',
+            'record__model_description',
             'order_date',
             'send_date',
             'send_number'
@@ -480,7 +480,7 @@ def part_order_xls(order_data):
             product_description = (
                 part['record__product__title']
                 + ' '
-                + part['record__model__title']
+                + part['record__model_description']
             )
             workSheet.write(row_num, 1, product_description, tableStyle)
             workSheet.write(row_num, 2, part['title'], tableStyle)
@@ -559,7 +559,7 @@ def part_order_list_xls(order_data):
             'title',
             'count',
             'record__product__title',
-            'record__model__title',
+            'record__model_description',
             'order_date',
             'send_date',
             'send_number'
@@ -578,7 +578,7 @@ def part_order_list_xls(order_data):
             product_description = (
                 part['record__product__title']
                 + ' '
-                + part['record__model__title']
+                + part['record__model_description']
             )
             workSheet.write(row_num, 2, product_description, tableStyle)
             workSheet.write(row_num, 3, part['title'], tableStyle)
