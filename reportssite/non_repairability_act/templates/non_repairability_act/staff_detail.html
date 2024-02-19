@@ -12,8 +12,13 @@
 
 
 <div class="container">
-    <main class="row justify-content-between p-2">
 
+    <!-- КНОКА ВЫЗОВА ПРАВОЙ БОКОВОЙ ПАНЕЛИ -->
+    {% if request.user.is_staff %}
+        {% show_service_member_btn act.center.pk %}
+    {% endif %}
+
+    <main class="row justify-content-between p-2">
         <div class="col-lg-9 px-lg-4">
             <!-- Заголовок -->
             <div class="row border border-dark rounded shadow px-3 py-2 mb-2 bg-body rounded">
@@ -342,7 +347,7 @@
                                 </div>
                             </div>
                             <span>{{ member.text }}</span>
-                            <p class="my-0 mb-3 text-muted">{{ member.created_at|date:'d B y H:i'}} {{ member.user }}</p>
+                            <p class="my-0 mb-3 text-muted">{{ member.created_at|date:'d.m.y H:i'}} {{ member.user }}</p>
                         </div>
                         {% endfor %}
                     </form> 

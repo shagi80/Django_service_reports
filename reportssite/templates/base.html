@@ -12,9 +12,150 @@
     <title>{% block title %}Отчеты RENOVA{% endblock %}</title>
     <link type="Image/x-icon" href='{% static "icons/favicon.ico" %}' rel="icon">
   </head>
-  <body>
+  <body> 
+
     {% block content %}Содержимое по умолчанию{% endblock content %}
+    
+    <!-- ПРАВАЯ БОКОВАЯ ПАНЕЛЬ - ЗАМЕТКИ СЕРВИСА -->
+    <div id="offcanvasRight" data-url="{% url 'get-center-members' %}"
+      class="offcanvas offcanvas-end" tabindex="-1"aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas-header">
+          <h5 id="offcanvasRightLabel" class="p-0">Заметки</h5>
+          <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+        </div>
+        
+        
+        <div  class="offcanvas-body">
+          <!-- Блок вывода сообщений -->
+          <div id="serviceMembers" data-url="{% url 'delete-center-members' %}" data-token="{{ csrf_token }}">
+            <div class="mt-5 text-center">
+              <div class="spinner-grow" role="status">
+                <span class="visually-hidden"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Форма добавления заметки -->
+        <form id="memberAddForm" action="{% url 'create-center-members' %}" class="row bg-light border rounded shadow m-4 py-2 pb-4 px-3 g-2">
+          {% csrf_token %} 
+          <input id="memberCenterInput" name="center_pk" value="0" hidden>
+          <input id="memberPkInput" name="member_pk" value="0" hidden>
+          <div class="d-flex justify-content-between">
+              <strong>Добавить заметку:</strong>
+              <div>
+                  <span class="border border-danger rounded px-1 me-1"><input id="memberStatusInput1" type="radio" name="status" value="1"></span>
+                  <span class="border border-primary rounded px-1 me-1"><input id="memberStatusInput2" class="text-success" type="radio" name="status" value="2"></span>
+                  <span class="border border-secondary rounded px-1"><input id="memberStatusInput3" class="text-danger" type="radio" name="status" value="3" checked></span>
+              </div>
+          </div>
+          <textarea id="memberTextInput" name="text" required rows="3"></textarea>
+          <div class="text-center">
+              <button id="submit" class="btn btn-outline-primary btn-sm">Отправить</button>
+          </div>
+        </form>
+    </div>
+
     <!-- Bootstrap в связке с Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    
+    <!--Подключение JQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script>
+
+      // запрос members для правой панели
+      function getCenterMembers(center_pk){
+        var url = $("#offcanvasRight").attr('data-url');
+        $.ajax({
+              url: url,
+              data: {'center_pk': center_pk},
+              success: function (data) {$("#serviceMembers").html(data)}
+          });
+      };
+
+      // очистка форсы добавления заметки
+      function clearMemberForm(){
+        $("#memberTextInput").val("");
+        $("#memberStatusInput3").trigger('click');
+      };
+      
+      // событие submit формы удаления записи правой панели
+      function DeleteMemberForm(url, token, pk) {
+        $.ajax({
+          url: url,
+          type: 'post',
+          data: {'csrfmiddlewaretoken':  token,
+                'pk': pk},
+          success: function(result) {
+            if (result == "200") {
+              $("#member" + pk).hide()
+            } else {
+              alert("Ошибка удаления заметки !");
+            };
+          }
+        });
+      };
+
+      // событие показа правой панели
+      $('#offcanvasRight').on('show.bs.offcanvas', function(event) {
+          var center_pk = event.relatedTarget.dataset.service;
+          $("#memberCenterInput").val(center_pk);
+          clearMemberForm();
+          getCenterMembers(center_pk);
+      })
+
+      // событие submit формы добавления записи правой панели
+      $('#memberAddForm').on('submit', function(e) {
+        // взято отсюда
+        // https://itchief.ru/javascript/jquery-get-form-data#jquery---serializaciya-formy
+        // отменяем поведение по умолчанию
+        e.preventDefault();
+        // серилизацию данных формы
+        var $data = $(this).serialize();
+        // очистка формы
+        clearMemberForm();
+        // отправка запроса
+        $.ajax({
+          url: $(this).attr('action'),
+          type: 'post',
+          data: $data,
+          success: function(result) {
+            if (result == "200") {
+              var center_pk = $("#memberCenterInput").val();
+              getCenterMembers(center_pk);
+            } else {
+              alert("Ошибка при записи заметки !");
+            };
+          }
+        });
+      });
+
+      // обработка кликов по кнопкам в members (edit, del)
+      $('#serviceMembers').on('click', function(e) {
+        var command = event.target.dataset.command;
+        if (command){
+          var pk = event.target.dataset.pk;
+          // удаление - отправка запроса на бэк
+          if (command == "del") {
+            var url = $("#serviceMembers").attr("data-url");
+            var token = $("#serviceMembers").attr("data-token"); 
+            DeleteMemberForm(url, token, pk)
+          }
+          // изменения - копирование данных в форму
+          if (command == "edit") {
+            var text = $.trim($("#memberText" + pk).text());
+            var status = $("#memberText" + pk).attr("data-status");
+            $("#memberTextInput").val(text);
+            $("#memberStatusInput" + status).trigger('click');
+            $("#memberPkInput").val(pk);
+          };
+        }      
+      })
+
+      // обновление страницы после скрытия правой панели
+      $('#offcanvasRight').on('hide.bs.offcanvas', function(){
+        location.reload(true);
+      })
+
+    </script>
   </body>
 </html>

@@ -1,0 +1,18 @@
+<div class="position-fixed top-0 end-0" style="margin-top:68px;margin-right:20px;">
+    <a data-service="{{ center_pk }}" data-bs-toggle="offcanvas" href="#offcanvasRight" role="button" aria-controls="offcanvasRight">
+        <svg width="50" height="50" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" class="bi bi-pencil-fill">
+            <g class="layer">
+            <title>Layer 1</title>
+            <ellipse cx="24.9" cy="24.86" fill="#aaff56" id="svg_2" rx="23.62" ry="23.9" stroke="#000000"/>
+            <path d="m32.63,12.16a0.73,0.73 0 0 0 -1.03,0l-2.42,2.41l5.45,5.45l2.41,-2.42a0.73,0.73 0 0 0 0,-1.03l-4.41,-4.41zm0.95,8.9l-5.45,-5.45l-9.55,9.55l0.31,0a0.73,0.73 0 0 1 0.73,0.73l0,0.73l0.73,0a0.73,0.73 0 0 1 0.73,0.73l0,0.73l0.73,0a0.73,0.73 0 0 1 0.73,0.73l0,0.73l0.73,0a0.73,0.73 0 0 1 0.73,0.73l0,0.31l9.55,-9.55zm-10.97,10.97a0.73,0.73 0 0 1 -0.04,-0.26l0,-0.73l-0.73,0a0.73,0.73 0 0 1 -0.73,-0.73l0,-0.73l-0.73,0a0.73,0.73 0 0 1 -0.73,-0.73l0,-0.73l-0.73,0a0.73,0.73 0 0 1 -0.73,-0.73l0,-0.73l-0.73,0a0.73,0.73 0 0 1 -0.25,-0.04l-0.26,0.26a0.73,0.73 0 0 0 -0.16,0.24l-2.94,7.35a0.73,0.73 0 0 0 0.95,0.95l7.35,-2.94a0.73,0.73 0 0 0 0.24,-0.16l0.26,-0.25z" id="svg_1" transform="matrix(1 0 0 1 0 0)"/>
+            </g>
+        </svg>
+        {% if member_count %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                style="margin-top:5px;margin-left:-5px;">
+                    {{ member_count }}
+                    <span class="visually-hidden"></span>
+            </span>
+        {% endif %}
+    </a>
+</div>

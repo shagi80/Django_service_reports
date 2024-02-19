@@ -14,6 +14,11 @@
 {% endif %}
 
 <div class="container">
+    <!-- КНОКА ВЫЗОВА ПРАВОЙ БОКОВОЙ ПАНЕЛИ -->
+    {% if request.user.is_staff %}
+        {% show_service_member_btn record.report.service_center.pk %}
+    {% endif %}
+
     <main class="row justify-content-between p-2">
 
         <div class="col-lg-9 px-lg-4">

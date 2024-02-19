@@ -77,6 +77,33 @@ class ServiceContacts(ChangeloggableMixin, models.Model):
         return self.name
 
 
+class ServiceMember(models.Model):
+    text = models.CharField(
+        max_length=1000, help_text='Текст замечания'
+    )
+
+    update_at = models.DateTimeField(auto_now=True)
+
+    status = models.PositiveSmallIntegerField(default=3, help_text='Статус')
+
+    center = models.ForeignKey(
+        'ServiceCenters', on_delete=models.CASCADE, related_name='members'
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Замечание к сервису'
+        verbose_name_plural = 'Замечания к сервисам'
+        ordering = ['status', 'update_at']
+
+    def __str__(self):
+        return (
+            f'{self.center} Замечание "{str(self.text)[:30]}" '
+            f'обновлено {self.update_at.strftime("%Y-%m-%d %H:%M:%S")} '
+            f'пользователем {self.user}.'
+        )
+
+
 post_save.connect(journal_save_handler, sender=ServiceRegions)
 post_delete.connect(journal_delete_handler, sender=ServiceRegions)
 post_save.connect(journal_save_handler, sender=ServiceCenters)

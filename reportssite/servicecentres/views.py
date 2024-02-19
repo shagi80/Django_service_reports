@@ -1,15 +1,16 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from django.contrib.auth.decorators import user_passes_test
-from django.http import Http404, HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseForbidden, HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, View, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic.edit import ProcessFormView
 from django.contrib import messages
-from main.my_validators import SuperUserMixin, StaffUserMixin, GeneralStaffUserMixin
+from main.my_validators import StaffUserMixin, GeneralStaffUserMixin
 from main.views import MyFormMessagesView
 from .forms import *
-from .models import ServiceContacts
+from .models import ServiceContacts, ServiceMember
 from main.my_validators import staff_validation
 
 
@@ -286,3 +287,66 @@ def CentersListExport(request):
     workBook.save(response)
     return response
 
+
+class GetServiceMembersView(StaffUserMixin, ProcessFormView):
+    """ Получение списка замечаний к сервису. """
+
+    def get(self, request):
+        if 'center_pk' in request.GET and request.GET['center_pk']:
+            center = get_object_or_404(
+                ServiceCenters, pk=request.GET['center_pk']
+                )
+            show_buttons = (
+                (request.user == center.staff_user)
+                or (request.user.is_superuser)
+                or (request.user.groups.filter(name='GeneralStaff').exists())
+                )
+            return render(
+                request,
+                'servicecentres/get_center_members.html',
+                {
+                    'center': center,
+                    'members': center.members.all(),
+                    'show_buttons': show_buttons
+                },
+            )
+        return HttpResponseNotFound()
+
+
+class CreateServiceMemberView(StaffUserMixin, ProcessFormView):
+    """ Создание нового замечания к сервису. """
+
+    def post(self, request):
+        if 'text' in request.POST and request.POST['text']:
+            if int(request.POST['member_pk']) == 0:
+                member = ServiceMember(
+                    text=request.POST['text'],
+                    status=int(request.POST['status']),
+                    center=get_object_or_404(
+                        ServiceCenters, pk=int(request.POST['center_pk'])
+                        ),
+                    user=request.user
+                )
+                member.save()
+            else:
+                member = get_object_or_404(
+                    ServiceMember, pk=int(request.POST['member_pk'])
+                    )
+                member.text = request.POST['text']
+                member.status = int(request.POST['status'])
+                member.save()
+            return HttpResponse(200)
+        return HttpResponseNotFound()
+
+
+class DeleteServiceMemberView(StaffUserMixin, ProcessFormView):
+    """ Удаление замечания к сервисному центру. """
+
+    def post(self, request):
+        if 'pk' in request.POST and request.POST['pk']:
+            member = get_object_or_404(
+                ServiceMember, pk=int(request.POST['pk'])
+                )
+            member.delete()
+            return HttpResponse(200)
+        return HttpResponseNotFound()

@@ -278,3 +278,13 @@ def colored_record_status(status):
         else:
             return None
     return ''
+
+
+@register.inclusion_tag('main/tag_show_service_member_btn.html')
+def show_service_member_btn(center_pk):
+    """ Кнопка вызова правой боковой панели. """
+    
+    member_count = ServiceMember.objects.filter(center__pk=center_pk).count()
+    if member_count > 99:
+        member_count = '99+'
+    return {'center_pk': center_pk, 'member_count': member_count}

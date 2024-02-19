@@ -13,4 +13,7 @@ urlpatterns = [
     path('contact-update/<int:pk>/', ServiceContactUpdate.as_view(), name='contact_update_page'),
     path('contact-delete/<int:contact_pk>/', ContactDelete, name='contact_delete_page'),
     path('export-list/', CentersListExport, name='export-list'),
+    path('get-center-members/', GetServiceMembersView.as_view(), name='get-center-members'),
+    path('create-center-members/', CreateServiceMemberView.as_view(), name='create-center-members'),
+    path('delete-center-members/', DeleteServiceMemberView.as_view(), name='delete-center-members'),
 ]

@@ -15,10 +15,15 @@
 {% endif %}
 
 <div class="container">
+
+    <!-- КНОКА ВЫЗОВА ПРАВОЙ БОКОВОЙ ПАНЕЛИ -->
+    {% if request.user.is_staff %}
+        {% show_service_member_btn report.service_center.pk %}
+    {% endif %}
+
     <!-- ЗАГОЛОВОК ОТЧЕТА -->
     <div class="row pt-2">
-
-        <div class="card text-dark bg-light border border-dark ro shadow" >
+        <div class="div text-dark bg-light border border-dark ro shadow" >
             <div class="card-body ">
 
                 <!-- Заголовок -->
@@ -558,7 +563,6 @@
         </div>              
         {% endfor %}
     </div>
-
     
     <!-- Окно выбора акта НРП -->
     <div class="modal fade" id="actsModal" tabindex="-1" aria-labelledby="actsModalLabel" aria-hidden="true">
