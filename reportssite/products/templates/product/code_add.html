@@ -60,23 +60,3 @@
 
 {% include 'inc/footer.html' %}
 
-<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы --!>
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script>
-    $("#id_product").change(function () {
-      var url = $("#codeForm").attr("data-group-url");
-      var productId = $(this).val();
-
-      $.ajax({
-        url: url,
-        data: {
-          'product': productId
-        },
-        success: function (data) {
-          $("#id_parent").html(data);
-        }
-      });
-    });
- </script>
-
-{% endblock %}
