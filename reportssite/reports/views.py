@@ -1198,8 +1198,6 @@ def SendParts(request):
         elif request.POST['submit_mode'] == 'save_data':
             # Режим - запись данных об отрправке
             # Проверяем заполнение формы
-            print(request.POST)
-            input()
             parts = ReportsParts.objects.filter(
                 pk__in=parts_pk,
                 record__report__service_center__pk=request.POST['center']
