@@ -296,18 +296,12 @@ class GetServiceMembersView(StaffUserMixin, ProcessFormView):
             center = get_object_or_404(
                 ServiceCenters, pk=request.GET['center_pk']
                 )
-            show_buttons = (
-                (request.user == center.staff_user)
-                or (request.user.is_superuser)
-                or (request.user.groups.filter(name='GeneralStaff').exists())
-                )
             return render(
                 request,
                 'servicecentres/get_center_members.html',
                 {
                     'center': center,
-                    'members': center.members.all(),
-                    'show_buttons': show_buttons
+                    'members': center.members.all()
                 },
             )
         return HttpResponseNotFound()
