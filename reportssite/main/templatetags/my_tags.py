@@ -187,7 +187,7 @@ def show_record_form_field_errors(errors):
 
 @register.filter
 def show_verified_proc(report):
-    result = report.verified_count / report.records_count * 100
+    result = report.verified_count / report.records_count * 100 if report.records_count > 0 else 0
     return result
 
 
