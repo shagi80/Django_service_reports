@@ -827,7 +827,7 @@ def RecordDeleteStaff(request):
                     title,
                     request.POST.get('message'),
                 )
-                return redirect('record-for-staff', report_pk)
+                return redirect('report_page', report_pk)
     return redirect('staff_home')
 
 
