@@ -394,7 +394,7 @@ class NonRepairabilityAct(models.Model):
                             'receipt_date',
                             'Дата продажи позднее сегодняшней даты !',
                         )
-                    if self.buy_date > self.receipt_date:
+                    if self.receipt_date and self.buy_date > self.receipt_date:
                         add_error(
                             'receipt_date',
                             'Дата продажи позднее даты приема !',
