@@ -77,6 +77,10 @@ class TwoLevelClassifier:
         print("🔤 Векторизация текстов для групп...")
         X_train_vec = self.group_vectorizer.fit_transform(X_train)
         X_test_vec = self.group_vectorizer.transform(X_test)
+    
+        # ПРЕОБРАЗУЕМ В ПЛОТНЫЙ ФОРМАТ для CatBoost
+        X_train_vec = X_train_vec.toarray()
+        X_test_vec = X_test_vec.toarray()
         
         print(f"📐 Размерность признаков групп: {X_train_vec.shape}")
         
@@ -153,15 +157,19 @@ class TwoLevelClassifier:
             
             # Создаем векторзатор для этой группы
             group_vectorizer = TfidfVectorizer(
-                max_features=1000,
-                min_df=1,
-                max_df=0.95,
-                ngram_range=(1, 3)
+                max_features=500,
+                min_df=3,
+                max_df=0.8,
+                ngram_range=(1, 2)
             )
             
             # Векторизация
             X_train_vec = group_vectorizer.fit_transform(X_train)
             X_test_vec = group_vectorizer.transform(X_test)
+    
+            # ПРЕОБРАЗУЕМ В ПЛОТНЫЙ ФОРМАТ
+            X_train_vec = X_train_vec.toarray()
+            X_test_vec = X_test_vec.toarray()
             
             # Сохраняем векторзатор
             self.code_vectorizers[group_name] = group_vectorizer
@@ -225,6 +233,7 @@ class TwoLevelClassifier:
         
         # Уровень 1: Предсказание группы
         group_vector = self.group_vectorizer.transform([cleaned_text])
+        group_vector = group_vector.toarray()
         group_probs = self.group_model.predict_proba(group_vector)[0]
         
         # Топ-N наиболее вероятных групп
@@ -270,6 +279,8 @@ class TwoLevelClassifier:
         
         # Векторизация для конкретной группы
         code_vector = self.code_vectorizers[group_name].transform([cleaned_text])
+        
+        code_vector = code_vector.toarray()
         
         # Предсказание вероятностей кодов
         code_probs = self.code_models[group_name].predict_proba(code_vector)[0]
