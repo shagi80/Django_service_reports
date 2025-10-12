@@ -41,6 +41,8 @@ from reportssite.settings import DEBUG
 from non_repairability_act.models import NonRepairabilityAct, ActStatus
 from reports.export import order_part_blank, report_xls, part_order_xls, part_order_list_xls
 
+from .ml_model.ml_model import MLModelLoader
+
 
 # -------------------------- ОТПРАКА ПОЧТЫ -------------------------------
 
@@ -942,6 +944,24 @@ def RecordDelete(request, report_pk):
     else:
         return HttpResponseForbidden()
 
+
+# обработка AJAX скрипта получения данных от ML-модели
+def get_ml_data(request):
+    from products.models import Codes
+
+    predictions = None
+    if 'problem_text' in request.GET:
+        problem_text = request.GET.get('problem_text', '')
+        classifier = MLModelLoader.get_classifier()
+        predictions = classifier.predict(problem_text, top_n_codes=3)
+        for prediction in predictions:
+            code_str = prediction['code'][:3]
+            code = get_object_or_404(Codes, Q(product__id=1) & Q(code=code_str))
+            prediction['codeId'] = code.id
+            
+    return render(
+        request, 'reports/ml_data.html', {'predictions': predictions}
+    )
 
 # --------------------------- ЗАКАЗ ДЕТАЛЕЙ -------------------------------------------
 

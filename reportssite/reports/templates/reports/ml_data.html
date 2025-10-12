@@ -1,0 +1,24 @@
+{% load static %}
+<div class="card my-4 mx-4">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-1 mb-2 mb-md-0">
+                <img src='{% static "reports/img/ml.png" %}'>
+            </div>
+            <div class="col-md-11">
+                <h6 class="my-0">Варианты кода от ИИ</h6>
+                <small> Выберите правильный код (если он есть в списке), или выберите подходящий в поле ввода ниже. </small>
+            </div>    
+        </div>    
+    </div>
+    <div class="card-body">
+        <ul class="list-group list-group-flush">
+            {% for prediction in predictions %}
+                <li class="list-group-item list-group-item-action ml-item" data-code="{{prediction.codeId}}" style="cursor: pointer;">
+                    {{ prediction.code }} (вероятность {{ prediction.confidence_percent }})
+                </li>
+            {% endfor %}
+        </ul>
+        <div class="text-muted mt-3">Это эксперементальная технология, не стоит ей доверять. Модель только учится.</div>
+    </div>
+</div>

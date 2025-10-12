@@ -14,13 +14,6 @@
 {% endif %}
 
 <div class="container col-lg-12">
-    
-    <div class="alert alert-warning alert-dismissible fade show text-center" role="alert">
-        <strong>Внимание !</strong> 
-        <div>Поле "Дата окончания ремонта" больше не являтся обязательным при заказе запчастей.</div>
-        <div>Заполняйте это поле только по факту окончания ремонта и вы сможете отслеживать статус каждого ремонта отдельно.</div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
 
     <div class="row pt-3 justify-content-between">
         <div class="col-auto">
@@ -266,8 +259,11 @@
                     <div class="col-md-2">
                         <label class="col-sm-12 text-muted" style="strong: true">описание</label>
                     </div>
-                    <div class="col-md-9">
+                    <div id="div_problem_description" class="col-md-9" data-ml-url="{% url 'ajax_get_ml_data' %}">
                         {{ form.problem_description }}
+                    </div>
+                    <div id="div_ml_data">
+                        
                     </div>
                     <div class="col-md-2">
                         <label class="col-sm-12 text-muted" style="strong: true">код</label>
