@@ -303,25 +303,23 @@
             <div class="row mt-2 border border-dark rounded shadow p-3 bg-body">               
                 <h6>Замечания к акту:</h6>
                 <div class="col-12">
-                    {% if act.status.status == 'received' or act.status.status == 'accepted' or act.status.status == 'confirmed'  or act.status.status == 'compensated' %}
-                        <form method="POST" action="{% url 'act-staff-add-member' %}">
-                            {% csrf_token %}
-                            <textarea id="memberText" class="form-control" rows=3 name="text" oninput="display();"></textarea>
-                            <input name="act_pk" value="{{ act.pk }}" hidden>
-                            <div class="d-flex justify-content-center mt-2 gap-1">
-                                {% if act.status.status != 'confirmed' and act.status.status != 'compensated' %}
-                                    {% if  act.center.staff_user == request.user or request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
-                                    <button id="memberUserBtn" disabled type="submit" name="mode" value="for_center" class="btn btn-outline-danger btn-sm">
-                                        для сервиса
-                                    </button>
-                                    {% endif %}
-                                {% endif %}
-                                <button id="memberStaffBtn" disabled type="submit"  name="mode" value="for_staff" class="btn btn-outline-dark btn-sm">
-                                    для менеджера
+                    <form method="POST" action="{% url 'act-staff-add-member' %}">
+                        {% csrf_token %}
+                        <textarea id="memberText" class="form-control" rows=3 name="text" oninput="display();"></textarea>
+                        <input name="act_pk" value="{{ act.pk }}" hidden>
+                        <div class="d-flex justify-content-center mt-2 gap-1">
+                            {% if act.status.status != 'confirmed' and act.status.status != 'compensated' and act.status.status != 'draft' %}
+                                {% if  act.center.staff_user == request.user or request.user.is_superuser or request.user|has_group:'GeneralStaff' %}
+                                <button id="memberUserBtn" disabled type="submit" name="mode" value="for_center" class="btn btn-outline-danger btn-sm">
+                                    для сервиса
                                 </button>
-                            </div>
-                        </form>
-                    {% endif %}                  
+                                {% endif %}
+                            {% endif %}
+                            <button id="memberStaffBtn" disabled type="submit"  name="mode" value="for_staff" class="btn btn-outline-dark btn-sm">
+                                для менеджера
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 {% if act.members.all %}
                     <form method="POST" action="{% url 'act-delete-member' %}"> 

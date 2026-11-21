@@ -177,3 +177,29 @@ $('#recordForm').submit(function(){
     $('#buttons_disabled').show();
 });
 
+
+// Запрос подсказки от ML-моедли
+$("#id_problem_description").on('input', function () {
+    var url = $("#div_problem_description").attr("data-ml-url");
+    var problemText = $(this).val().trim();
+    var productId = $("#id_product").val();
+
+    if (problemText.length < 10 || productId != 1) {
+            $("#div_ml_data").html("");
+            return;
+        }
+
+
+    $.ajax({
+        url: url,
+        data: {'problem_text': problemText, },
+        success: function (data) {
+            $("#div_ml_data").html(data);
+            $('.ml-item').click(function(event) {
+                var codeId = $(this).attr('data-code');
+                $("#id_code").val(codeId);               
+            });
+        }
+    });
+
+  });

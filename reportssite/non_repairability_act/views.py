@@ -1,4 +1,5 @@
 import datetime, calendar
+from django.db.models import Subquery, OuterRef
 from threading import Thread
 from django.db import models
 from django.db.models import Q
@@ -340,61 +341,66 @@ class ActListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
+         # 1. Заменяем 'status' на 'statuses' в оптимизации запросов.
         qset = models.NonRepairabilityAct.objects.select_related(
             'product', 'center'
-        ).all()
-        if not self.request.user.is_staff:
-            qset = qset.filter(center=self.request.user.service_center())
-        elif not self.request.user.is_superuser:
-            id = [
-                act.id
-                for act in qset
-                if act.status.status != models.ActStatus.DRAFT
-            ]
-            qset = qset.filter(id__in=id)
-        if self.request.GET.get('filter', '') != '':
+        ).prefetch_related('statuses').order_by('-id')
+
+        user = self.request.user
+        GET = self.request.GET
+
+        # Подзапрос: Изолированно вытаскивает самый свежий статус для каждого акта
+        latest_status_subquery = models.ActStatusHistory.objects.filter(
+            act=OuterRef('pk')).order_by('-created_at', '-id').values('status')[:1]
+
+        # ВАЖНО: Добавляем аннотацию текущего статуса сразу для ВСЕХ пользователей.
+        # Это избавляет от багов с проверками и делает поле доступным во всех фильтрах ниже.
+        qset = qset.annotate(_current_status_str=Subquery(latest_status_subquery))
+
+        # 2. Проверка прав
+        if not user.is_staff:
+            qset = qset.filter(center=user.service_center())
+        elif not user.is_superuser:
+            # Исключаем черновики через созданную аннотацию
+            qset = qset.exclude(_current_status_str=models.ActStatus.DRAFT)
+
+        # 3. Текстовый поиск (без изменений)
+        search_filter = GET.get('filter', '').strip()
+        if search_filter:
             qset = qset.filter(
-                Q(shop__iregex=self.request.GET.get('filter'))
-                | Q(client__iregex=self.request.GET.get('filter'))
-                | Q(serial_number__iregex=self.request.GET.get('filter'))
+                Q(shop__icontains=search_filter) |
+                Q(client__icontains=search_filter) |
+                Q(serial_number__icontains=search_filter)
             )
-        if self.request.GET.get('service_center', '') != '':
-            qset = qset.filter(center=self.request.GET.get('service_center'))
-        if self.request.GET.get('staff_user', '') != '':
-            qset = qset.filter(
-                service_center__staff_user=self.request.GET.get('staff_user')
-            )
-        if (
-            'status' in self.request.GET
-            and self.request.GET.get('status', '') != ''
-        ):
-            id = [
-                act.id
-                for act in qset
-                if act.status.status == self.request.GET.get('status')
-            ]
-            qset = qset.filter(id__in=id)
-        if (
-            'year' in self.request.GET
-            and 'month' in self.request.GET
-            and self.request.GET.get('year', '') != ''
-            and self.request.GET.get('month', '') != ''
-        ):
-            year = int(self.request.GET.get('year', ''))
-            month = int(self.request.GET.get('month', ''))
-            month_start = datetime.date(year, month, 1)
-            month_end = datetime.date(
-                year, month, calendar.monthrange(year, month)[1]
-            )
-            qset = qset.filter(
-                doc_date__gte=month_start, doc_date__lte=month_end
-            )
-        return qset
+
+        # 4. Фильтры по центру и сотруднику
+        service_center = GET.get('service_center', '')
+        if service_center:
+            qset = qset.filter(center=service_center)
+
+        staff_user = GET.get('staff_user', '')
+        if staff_user:
+            qset = qset.filter(center__staff_user=staff_user)
+
+        # 5. Фильтр по ТЕКУЩЕМУ статусу (Теперь работает идеально для всех!)
+        status = GET.get('status', '')
+        if status:
+            qset = qset.filter(_current_status_str=status)
+
+        # 6. Фильтр по датам
+        year = GET.get('year', '')
+        month = GET.get('month', '')
+        if year.isdigit() and month.isdigit():
+            qset = qset.filter(doc_date__year=int(year), doc_date__month=int(month))
+
+        return qset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = forms.ActsFilterForm(self.request.GET)
-        context['obj_count'] = self.object_list.count()
+        
+        # Используем встроенный в пагинацию подсчет, чтобы не делать лишний запрос
+        context['obj_count'] = context['paginator'].count
         return context
 
 

@@ -8,6 +8,9 @@ from django.core.paginator import Paginator
 from django.contrib.auth import login, logout
 from django.views.generic import View, ListView, TemplateView
 from django.contrib import messages
+from django.db.models import Count, Q
+from django.utils import timezone
+from django.db.models import OuterRef, Subquery, Count
 
 from .business_logic import datafile_uploaded, datafile_get_format, STATUS_ACCEPTED, STATUS_PAYMENT, REPORT_STATUS
 from reports.models import Reports, ReportsParts
@@ -55,82 +58,143 @@ def start_login(request):
 @user_passes_test(user_validation)
 def user_home(request):
     cont = dict()
-    reports = Reports.objects.filter(service_center__user=request.user)[:3]
-    acts = NonRepairabilityAct.objects.filter(center__user=request.user)[:3]
+    
+    # 1. Получаем объект сервисного центра
     senter = get_object_or_404(ServiceCenters, user=request.user)
-    ordered_parts = ReportsParts.objects.filter(record__report__in=reports, order_date__isnull=False).\
-        exclude(record__report__status__in=[STATUS_ACCEPTED, STATUS_PAYMENT]).values('title', 'count')
+    
+    # 2. Получаем отчеты (QuerySet для отображения)
+    # Используем[:3], как в вашем оригинале. 
+    # Если нужна пагинация всех отчетов, лимит [:3] нужно будет убрать.
+    reports = Reports.objects.filter(service_center=senter).order_by('-id')[:3]
+    
+    # 3. Ключевой момент для исправления ошибки MySQL 1235:
+    # Вычисляем ID отчетов в отдельный список, чтобы избежать LIMIT в подзапросе
+    report_ids = list(reports.values_list('id', flat=True))
+    
+    # 4. Получаем акты
+    acts = NonRepairabilityAct.objects.filter(center=senter).order_by('-id')[:3]
+    
+    # 5. Получаем заказанные детали, используя список ID
+    # Фильтруем через report_id__in=report_ids
+    ordered_parts = ReportsParts.objects.filter(
+        record__report_id__in=report_ids, 
+        order_date__isnull=False
+    ).exclude(
+        record__report__status__in=[STATUS_ACCEPTED, STATUS_PAYMENT]
+    ).values('title', 'count')
+    
+    # 6. Форма и пагинация (исправляем передачу в контекст)
     form = ReportTitleForm()
-    paginator = Paginator(reports, 10)
+    
+    # Если вы планируете пагинацию, лучше делать её по полному списку отчетов,
+    # а не по обрезанному [:3]. Но оставляю структуру как была:
+    all_reports = Reports.objects.filter(service_center=senter).order_by('-id')
+    paginator = Paginator(all_reports, 10)
     page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # 7. Наполнение контекста
     cont['reports'] = reports
     cont['acts'] = acts
     cont['rep_form'] = form
     cont['senter'] = senter
     cont['parts'] = ordered_parts
+    cont['page_obj'] = page_obj # Добавляем объект пагинации для шаблона
+    
     return render(request, 'main/user_home.html', cont)
 
 
 #домашяя страница персоланала
 @user_passes_test(staff_validation)
 def staff_home_1(request):
-    """ главная страницы менеджера  """
+    cont = {}
+    
+    # 1. Логи
+    cont['staff_actions'] = ChangeLogs.objects.only('pk')[:3]
 
-    from django.db.models import Q, Count, F
+    # 2. Отчеты
+    report_aggregates = Reports.objects.aggregate(
+        **{
+            f"status_{status_code}": Count('id', filter=Q(status=status_code))
+            for status_code, _ in REPORT_STATUS
+        }
+    )
+    
+    # Собираем словарь для шаблона
+    cont['reports'] = {
+        status_code: {
+            'title': status_title, 
+            'count': report_aggregates.get(f"status_{status_code}", 0)
+        } 
+        for status_code, status_title in REPORT_STATUS
+    }
 
-    cont = dict()
-    # получение логов изменения данных
-    logs = ChangeLogs.objects.all()[:3].values('pk')
-    # получение данных по отчетам
-    reports_data = {}
-    for status in REPORT_STATUS:
-        item_data = {}
-        item_data['title'] = status[1] 
-        item_data['count'] = Reports.objects.filter(status=status[0]).count()
-        reports_data[status[0]] = item_data
-    # получение данных по актам
-    acts_data = {}
-    acts = NonRepairabilityAct.objects.all()
-    for status in ActStatus:
-        item_data = {}
-        item_data['title'] = status.label
-        id = [act.id for act in acts if act.status.status == status]
-        item_data['count'] = len(id)
-        acts_data[status] = item_data
-    # получение списка заказанных деталей
-    parts = ReportsParts.objects.filter(order_date__isnull=False, send_number__isnull=True).\
-        annotate(center_title=F('record__report__service_center__title'),\
-                 center_pk=F('record__report__service_center__pk')).\
-                    values('center_title', 'center_pk', 'order_date')   
-    #if not request.user.is_superuser and not request.user.groups.filter(name='GeneralStaff'):
-    if ServiceRegions.objects.filter(staff_user=request.user):
-        parts = parts.filter(
-                Q(order_date__isnull=False)&(
-                Q(record__report__service_center__region__staff_user = request.user)|
-                Q(record__report__service_center__staff_user = request.user)                
-                )
-            )
-    expired_periods = [7, 14, 21]
-    expired_parts = {}
-    for period in expired_periods:
-        count = parts.filter(
-            order_date__lt=(datetime.datetime.now()-datetime.timedelta(days=period))
-            ).count()
-        if count:
-            expired_parts[str(period)] = count
-    parts = parts.annotate(count=Count('record__report__service_center__title'))
+    # 3. Акты
+    # Подзапрос: находит ID САМОЙ ПОСЛЕДНЕЙ записи в истории для конкретного акта
+    latest_status_id_subquery = ActStatusHistory.objects.filter(
+        act=OuterRef('act')
+    ).order_by('-created_at', '-id').values('id')[:1]
+    
+    # Запрос к истории: берем только те записи, чей ID совпадает с самым свежим ID для их акта
+    current_statuses = ActStatusHistory.objects.filter(
+        id=Subquery(latest_status_id_subquery)
+    )
+    
+    # Группируем эти уникальные последние записи по полю 'status'
+    # .order_by() в конце ОБЯЗАТЕЛЕН — он очищает дефолтную сортировку модели, ломающую GROUP BY!
+    act_counts = current_statuses.values('status').annotate(
+        total=Count('id')
+    ).order_by()
+    
+    # Превращаем результат в плоский словарь {код_статуса: количество}
+    act_counts_dict = {item['status']: item['total'] for item in act_counts}
+    
+    # Наполняем контекст для шаблона
+    cont['acts'] = {
+        status.value: {
+            'title': status.label, 
+            'count': act_counts_dict.get(status.value, 0)
+        }
+        for status in ActStatus
+    }
+
+    # 4. Детали (Оптимизация фильтрации)
+    parts_qs = ReportsParts.objects.filter(order_date__isnull=False, send_number__isnull=True)
+    
+    # Фильтр по регионам (делаем один запрос к ServiceRegions)
+    if ServiceRegions.objects.filter(staff_user=request.user).exists():
+        parts_qs = parts_qs.filter(
+            Q(record__report__service_center__region__staff_user=request.user) |
+            Q(record__report__service_center__staff_user=request.user)
+        )
+
+    # 5. Просроченные детали — считаем всё одним запросом через Conditional Aggregation
+    now = timezone.now()
+    expired_aggregates = parts_qs.aggregate(
+        p7=Count('id', filter=Q(order_date__lt=now - datetime.timedelta(days=7))),
+        p14=Count('id', filter=Q(order_date__lt=now - datetime.timedelta(days=14))),
+        p21=Count('id', filter=Q(order_date__lt=now - datetime.timedelta(days=21))),
+    )
+    cont['expired_parts'] = {k[1:]: v for k, v in expired_aggregates.items() if v > 0}
+
+    # 6. Группировка деталей по сервисным центрам (делаем на стороне БД)
+    parts_by_center = parts_qs.values(
+        'record__report__service_center__pk', 
+        'record__report__service_center__title'
+    ).annotate(total_count=Count('id'))
+
     parts_dict = {}
-    for item in parts:
-        if item['center_pk'] in parts_dict:
-            parts_dict[item['center_pk']]['count'] += item['count']
-        else:
-            parts_dict[item['center_pk']] = {'count': item['count'], 'title': item['center_title'], 'pk': item['center_pk'] }
-
+    for item in parts_by_center:
+        pk = item['record__report__service_center__pk']
+        if pk:  # Проверка, чтобы PK не был пустым
+            parts_dict[pk] = {
+                'pk': pk,
+                'title': item['record__report__service_center__title'],
+                'count': item['total_count']
+            }
+    
     cont['part_orders'] = parts_dict
-    cont['expired_parts'] = expired_parts
-    cont['staff_actions'] = logs
-    cont['reports'] = reports_data
-    cont['acts'] = acts_data
+
     return render(request, 'main/staff_home_1.html', cont)
 
 #выход пользователя
