@@ -1,2 +1,3 @@
 #!/bin/bash
-ssh localhost -p222 /usr/bin/python3 ~/shagi80.beget.tech/public_html/reportssite/manage.py weeklymessages
+#!/bin/bash
+ssh localhost -p222 "/home/s/shagi80/shagi80.beget.tech/public_html/venv/bin/python /home/s/shagi80/shagi80.beget.tech/public_html/reportssite/manage.py weeklymessages"
