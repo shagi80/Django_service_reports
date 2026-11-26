@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers, status
@@ -256,7 +255,7 @@ class StorageListAPIView(ListAPIView):
             type=OpenApiTypes.DATETIME,
             location=OpenApiParameter.QUERY,
             description=(
-                "Фильтр инкрементальной выгрузки: вернуть группы, созданные или обновленные строго после "
+                "Нижняя граница инкрементальной выгрузки: вернуть группы, созданные или обновленные строго после "
                 "указанной даты и времени в формате ISO 8601 (например: `2026-11-18T12:00:00Z` или `2026-11-18T15:00:00+03:00`)."
             ),
             required=False,
@@ -275,6 +274,17 @@ class StorageListAPIView(ListAPIView):
             description='Количество записей на одной странице (по умолчанию 100, максимум 1000).',
             required=False,
         ),
+        OpenApiParameter(
+            name='updated_to',
+            type=OpenApiTypes.DATETIME,
+            location=OpenApiParameter.QUERY,
+            description=(
+                "Верхняя граница инкрементальной выгрузки: вернуть записи, обновленные до или включительно "
+                "до указанной даты и времени в формате ISO 8601 (например: `2026-11-18T12:05:00Z`). "
+                "Рекомендуется передавать `server_time`, полученный перед началом цикла выгрузки."
+            ),
+            required=False,
+        )
     ],
     responses={
         200: OpenApiResponse(
@@ -371,7 +381,7 @@ class GroupListAPIView(UpdatedAfterFilterMixin, ListAPIView):
             type=OpenApiTypes.DATETIME,
             location=OpenApiParameter.QUERY,
             description=(
-                "Фильтр инкрементальной выгрузки: вернуть товары, обновленные строго после указанной даты и времени "
+                "Нижняя граница инкрементальной выгрузки: вернуть товары, обновленные строго после указанной даты и времени "
                 "в формате ISO 8601 (например: `2026-11-18T12:00:00Z` или `2026-11-18T15:00:00+03:00`)."
             ),
             required=False,
@@ -400,6 +410,17 @@ class GroupListAPIView(UpdatedAfterFilterMixin, ListAPIView):
             description='Количество записей на одной странице (по умолчанию 100, максимум 1000).',
             required=False,
         ),
+         OpenApiParameter(
+            name='updated_to',
+            type=OpenApiTypes.DATETIME,
+            location=OpenApiParameter.QUERY,
+            description=(
+                "Верхняя граница инкрементальной выгрузки: вернуть записи, обновленные до или включительно "
+                "до указанной даты и времени в формате ISO 8601 (например: `2026-11-18T12:05:00Z`). "
+                "Рекомендуется передавать `server_time`, полученный перед началом цикла выгрузки."
+            ),
+            required=False,
+        )
     ],
     responses={
         200: OpenApiResponse(
@@ -516,7 +537,7 @@ class GoodsItemListAPIView(UpdatedAfterFilterMixin, ListAPIView):
             type=OpenApiTypes.DATETIME,
             location=OpenApiParameter.QUERY,
             description=(
-                "Фильтр инкрементальной выгрузки: вернуть записи об остатках, обновленные строго после "
+                "Нижняя граница инкрементальной выгрузки: вернуть записи об остатках, обновленные строго после "
                 "указанной даты и времени в формате ISO 8601 (например: `2026-11-18T12:00:00Z` или `2026-11-18T15:00:00+03:00`)."
             ),
             required=False,
@@ -535,6 +556,17 @@ class GoodsItemListAPIView(UpdatedAfterFilterMixin, ListAPIView):
             description='Количество записей на одной странице (по умолчанию 100, максимум 1000).',
             required=False,
         ),
+         OpenApiParameter(
+            name='updated_to',
+            type=OpenApiTypes.DATETIME,
+            location=OpenApiParameter.QUERY,
+            description=(
+                "Верхняя граница инкрементальной выгрузки: вернуть записи, обновленные до или включительно "
+                "до указанной даты и времени в формате ISO 8601 (например: `2026-11-18T12:05:00Z`). "
+                "Рекомендуется передавать `server_time`, полученный перед началом цикла выгрузки."
+            ),
+            required=False,
+        )
     ],
     responses={
         200: OpenApiResponse(
@@ -639,8 +671,10 @@ class RemnantListAPIView(UpdatedAfterFilterMixin, ListAPIView):
         "- `storage_code` - обязательно поле - код склада для выборки остатков.\n"
         "- `in_stock` - при `true` возвращает товары с положительным остатком, при `false` (отсутствии параметра)"
         " — все товары.\n"
-        "- `updated_after` - комплексный инкрементальный фильтр — возвращает товар, если после указанной даты "
+        "- `updated_after` - нижняя граница инкрементной выгрузки. Возвращает товар, если после указанной даты "
         "изменилась сама карточка номенклатуры, персональная цена контрагента или остаток товара.\n"
+        "- `updated_to` - верхняя граница инкрементной выгрузки. Возвращает товар, его карточка, персональная "
+        "цена контрагента или остаток изменились до или включая указанную дату.\n"
         "- Результаты детерминированно отсортированы по `name`, затем по `code`."
     ),
     parameters=[
@@ -649,7 +683,8 @@ class RemnantListAPIView(UpdatedAfterFilterMixin, ListAPIView):
             type=OpenApiTypes.DATETIME,
             location=OpenApiParameter.QUERY,
             description=(
-                "Фильтр инкрементальной выгрузки (формат ISO 8601, например: `2026-11-18T12:00:00Z`)."
+                "Нижняя граница инкрементальной выгрузки: вернуть записи, обновленные строго после "
+                "указанной даты и времени в формате ISO 8601 (например: `2026-11-18T12:00:00Z` или `2026-11-18T15:00:00+03:00`)."
             ),
             required=False,
         ),
@@ -696,6 +731,17 @@ class RemnantListAPIView(UpdatedAfterFilterMixin, ListAPIView):
             description='Количество записей на одной странице (по умолчанию 100, максимум 1000).',
             required=False,
         ),
+         OpenApiParameter(
+            name='updated_to',
+            type=OpenApiTypes.DATETIME,
+            location=OpenApiParameter.QUERY,
+            description=(
+                "Верхняя граница инкрементальной выгрузки: вернуть записи, обновленные до или включительно "
+                "до указанной даты и времени в формате ISO 8601 (например: `2026-11-18T12:05:00Z`). "
+                "Рекомендуется передавать `server_time`, полученный перед началом цикла выгрузки."
+            ),
+            required=False,
+        )
     ],
     responses={
         200: OpenApiResponse(
@@ -807,7 +853,7 @@ class RemnantListAPIView(UpdatedAfterFilterMixin, ListAPIView):
         ),
     }
 )
-class CatalogExportAPIView(ListAPIView):
+class CatalogExportAPIView(UpdatedAfterFilterMixin, ListAPIView):
     serializer_class = CatalogItemSerializer
     authentication_classes = [BasicAuthentication]
     permission_classes = [IsCounterpartyEmployee]
@@ -819,7 +865,7 @@ class CatalogExportAPIView(ListAPIView):
         if not counterparty:
             raise ValidationError({
                 'message': 'Профиль пользователя не привязан к контрагенту.'
-                })
+            })
 
         # 1. Базовый отбор: получаем коды всех товаров, на которые у контрагента назначена цена.
         priced_item_codes = Price.objects.filter(
@@ -834,7 +880,7 @@ class CatalogExportAPIView(ListAPIView):
             queryset = queryset.filter(owner_code=owner_code)
 
         # Читаем код склада заранее, так как он влияет и на фильтр наличия (in_stock),
-        # и на отслеживание изменений остатков (updated_after)
+        # и на отслеживание изменений остатков (updated_after / updated_to)
         storage_code = self.request.query_params.get('storage_code')
 
         # 3. Необязательный фильтр по наличию остатков (?in_stock=true / ?in_stock=false)
@@ -857,33 +903,36 @@ class CatalogExportAPIView(ListAPIView):
                 available_item_codes = remnants_filter.values_list('item_code', flat=True)
                 queryset = queryset.filter(code__in=available_item_codes)
 
-        # 4. Комплексный фильтр инкрементальной выгрузки (?updated_after=)
-        updated_after = self.request.query_params.get('updated_after')
-        if updated_after:
-            field = serializers.DateTimeField()
-            try:
-                parsed_date = field.to_internal_value(updated_after.replace(' ', '+'))
-            except serializers.ValidationError:
-                raise ValidationError({
-                    'updated_after': 'Неверный формат даты. Используйте ISO 8601 (например, 2026-11-18T12:00:00Z).'
-                })
+        # 4. Комплексный фильтр инкрементальной выгрузки (?updated_after= и ?updated_to=)
+        updated_after, updated_to = self.get_updated_range()
+
+        if updated_after is not None or updated_to is not None:
+            item_time_q = Q()
+            price_qs = Price.objects.filter(counterparty_code=counterparty.code)
+            remnant_qs = Remnant.objects.all()
+
+            if storage_code:
+                remnant_qs = remnant_qs.filter(storage_code=storage_code)
+
+            if updated_after is not None:
+                item_time_q &= Q(updated_at__gt=updated_after)
+                price_qs = price_qs.filter(updated_at__gt=updated_after)
+                remnant_qs = remnant_qs.filter(updated_at__gt=updated_after)
+
+            if updated_to is not None:
+                item_time_q &= Q(updated_at__lte=updated_to)
+                price_qs = price_qs.filter(updated_at__lte=updated_to)
+                remnant_qs = remnant_qs.filter(updated_at__lte=updated_to)
 
             # А) Товары, у которых обновилась персональная цена этого контрагента
-            updated_price_codes = Price.objects.filter(
-                counterparty_code=counterparty.code,
-                updated_at__gt=parsed_date
-            ).values_list('item_code', flat=True)
+            updated_price_codes = price_qs.values_list('item_code', flat=True)
 
             # Б) Товары, у которых изменился остаток (если передан storage_code — отслеживаем только этот склад)
-            updated_remnants_qs = Remnant.objects.filter(updated_at__gt=parsed_date)
-            if storage_code:
-                updated_remnants_qs = updated_remnants_qs.filter(storage_code=storage_code)
-
-            updated_remnant_codes = updated_remnants_qs.values_list('item_code', flat=True)
+            updated_remnant_codes = remnant_qs.values_list('item_code', flat=True)
 
             # В) Объединяем условия: изменилась карточка ИЛИ цена ИЛИ остаток
             queryset = queryset.filter(
-                Q(updated_at__gt=parsed_date) |
+                item_time_q |
                 Q(code__in=updated_price_codes) |
                 Q(code__in=updated_remnant_codes)
             )
@@ -936,105 +985,79 @@ class CatalogExportAPIView(ListAPIView):
 
         return Response(serializer.data)
 
-
 # ========================================== #
 # 4. ЗАПИСЬ
 # ========================================== #
 
-
 class BulkUpsertAPIView(APIView):
     """
     Базовый класс для массовой загрузки и обновления (Upsert) данных из 1С.
-    Совместим с Django 3.2 (использует связку bulk_create + bulk_update).
-    Поддерживает суммирование числовых полей при дублях внутри входящего пакета.
+    Принимает JSON-массив объектов, валидирует через сериализатор и выполняет bulk_create
+    с обновлением существующих записей при совпадении уникальных ключей.
     """
     authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]  # Запись разрешена только сервисным учеткам / администраторам
 
     model = None
     serializer_class = None
     unique_fields = []
     update_fields = []
-    sum_fields = []  # Поля, значения которых нужно суммировать при дублях в одном пакете
     has_updated_at = False
+    sum_double = False
+    sum_field = 'count'
 
     def post(self, request):
+        # 1. Валидируем входящий JSON-массив целиком
         serializer = self.serializer_class(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
 
         validated_data = serializer.validated_data
         if not validated_data:
             return Response(
-                {'status': 'ok', 'processed': 0, 'created': 0, 'updated': 0},
+                {'status': 'ok', 'processed': 0},
                 status=status.HTTP_200_OK
             )
 
-        # 1. Дедупликация входящего пакета по уникальному ключу с суммированием sum_fields
-        deduped_map = {}
-        for item in validated_data:
-            key = tuple(item[f] for f in self.unique_fields)
-            if key in deduped_map and self.sum_fields:
-                for field in self.sum_fields:
-                    existing_val = deduped_map[key].get(field) or 0
-                    new_val = item.get(field) or 0
-                    deduped_map[key][field] = existing_val + new_val
-            else:
-                deduped_map[key] = item.copy()
-
-        # 2. Загружаем из БД только те записи, чьи ключи есть во входящем пакете
-        if len(self.unique_fields) == 1:
-            field_name = self.unique_fields
-            keys_list = [k for k in deduped_map.keys()]
-            existing_qs = self.model.objects.filter(**{f'{field_name}__in': keys_list})
-        else:
-            q_filter = Q()
-            for field_name in self.unique_fields:
-                vals = {item[field_name] for item in deduped_map.values()}
-                q_filter &= Q(**{f'{field_name}__in': vals})
-            existing_qs = self.model.objects.filter(q_filter)
-
-        existing_map = {
-            tuple(getattr(obj, f) for f in self.unique_fields): obj
-            for obj in existing_qs
-        }
+        # 2. Защита от дублей внутри одного пакета по unique_fields
+        if self.unique_fields:
+            deduped = {}
+            for item in validated_data:
+                key = tuple(item.get(field) for field in self.unique_fields)
+                if key in deduped and self.sum_double:
+                    current_val = deduped[key].get(self.sum_field) or 0
+                    new_val = item.get(self.sum_field) or 0
+                    deduped[key].update(item)
+                    deduped[key][self.sum_field] = current_val + new_val
+                else:
+                    deduped[key] = item
+            validated_data = list(deduped.values())
 
         now = timezone.now()
-        to_create = []
-        to_update = []
+        instances = []
 
-        # 3. Распределяем записи на создание и обновление
-        for key, item in deduped_map.items():
+        # 3. Формируем экземпляры моделей в памяти без обращения к БД
+        for item in validated_data:
             if self.has_updated_at:
+                # Принудительно обновляем метку времени, т.к. bulk_create не вызывает auto_now=True
                 item['updated_at'] = now
+            instances.append(self.model(**item))
 
-            if key in existing_map:
-                obj = existing_map[key]
-                for field in self.update_fields:
-                    setattr(obj, field, item.get(field))
-                if self.has_updated_at:
-                    obj.updated_at = now
-                to_update.append(obj)
-            else:
-                to_create.append(self.model(**item))
-
+        # 4. Формируем итоговый список обновляемых полей
         fields_to_update = list(self.update_fields)
         if self.has_updated_at and 'updated_at' not in fields_to_update:
             fields_to_update.append('updated_at')
 
-        # 4. Выполняем вставку и обновление в одной транзакции
-        with transaction.atomic():
-            if to_create:
-                self.model.objects.bulk_create(to_create, batch_size=500)
-            if to_update:
-                self.model.objects.bulk_update(to_update, fields_to_update, batch_size=500)
+        # 5. Выполняем массовую вставку / обновление одним пакетом (по 200 записей на запрос)
+        self.model.objects.bulk_create(
+            instances,
+            batch_size=200,
+            update_conflicts=True,
+            unique_fields=self.unique_fields,
+            update_fields=fields_to_update,
+        )
 
         return Response(
-            {
-                'status': 'ok',
-                'processed': len(deduped_map),
-                'created': len(to_create),
-                'updated': len(to_update),
-            },
+            {'status': 'ok', 'processed': len(instances)},
             status=status.HTTP_200_OK
         )
 
@@ -1089,7 +1112,7 @@ class RemnantBulkImportAPIView(BulkUpsertAPIView):
     unique_fields = ['storage_code', 'item_code']
     update_fields = ['count']
     has_updated_at = True
-    sum_fields = ['count'] 
+    sum_double = True
 
 
 @extend_schema(
